@@ -1,4 +1,5 @@
-SOURCES_CORE = core/main.cpp core/server.cpp
+SOURCES_CORE = core/main.cpp core/core.cpp core/net_server.cpp core/game_server.cpp \
+				core/data_manager.cpp core/world_manager.cpp
 TARGET_CORE = $(TARGET_DIR)/core.out
 
 OBJECTS_CORE = $(addprefix $(OBJ_DIR)/, $(SOURCES_CORE:.cpp=.o))

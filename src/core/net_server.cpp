@@ -35,20 +35,6 @@ void SendAll(const char* message)
     }
 }
 
-void SendUser(const char* username, const char* message)
-{
-    assert(username);
-    assert(message);
-
-    Player* player = FindPlayerByNickname(username);
-    if(!player || !player->online) return;
-    
-    send(player->thread->data->client_socket, message, strlen(message), 0);
-}
-
-
-
-
 static void* HandleClient(void* arg) 
 {
     ThreadInfo* info = (ThreadInfo*)arg;
@@ -78,13 +64,15 @@ static void* HandleClient(void* arg)
         printf("[NET SERVER THREAD %lu] %lu:%s\n", info->num, strlen(buffer), buffer);
 
         // Обрабатываем запрос пользователя
-        if(!ParseRequest(info, buffer)) break;
+        ParseRequest(info, buffer);
     }
     
     close(client_socket);
     
     // Освобождаем слот в массиве потоков
     info->in_use = false;
+    if(info->player)    info->player->thread = NULL;
+    info->player = NULL;
     CLIENTS--;
     
     printf("[NET SERVER THREAD %lu] Connection closed\n", info->num);

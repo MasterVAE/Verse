@@ -31,7 +31,7 @@ struct Tree
     TreeNode* root;
 };
 
-bool ParseRequest(ThreadInfo* info, const char* buffer);
+void ParseRequest(ThreadInfo* info, const char* buffer);
 Tree* ParseArgument(const char* buffer);
 
 Tree* TreeCreate();

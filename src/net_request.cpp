@@ -12,6 +12,8 @@
 #include "net_server.h"
 #include "core.h"
 
+#include "commands.h"
+
 
 static Tree* ParseArguments(const char* buffer);
 
@@ -58,7 +60,7 @@ void TreeNodeDestroy(TreeNode* node)
     {
         case NODE_ARRAY:
         {
-            for(int i = 0; i < node->value.lenght; i++)
+            for(size_t i = 0; i < node->value.lenght; i++)
             {
                 TreeNodeDestroy(node->children[i]);
             }
@@ -76,28 +78,39 @@ void TreeNodeDestroy(TreeNode* node)
 }
 
 
-bool ParseRequest(ThreadInfo* info, const char* buffer)
+void ParseRequest(ThreadInfo* info, const char* buffer)
 {
     assert(info);
     assert(buffer);
 
     ClientData* data = info->data;
-    int client_socket = data->client_socket;
 
     Tree* tree = ParseArguments(buffer);
     
-    if(!tree->root)
-    {
-        printf("NO ROOT\n");
-    }
-    else
-    {
-        TreeNodePrint(tree->root);
-    }
+    if(!tree->root) return;
 
-    // TODO
+    if(tree->root->type != NODE_ARRAY) return;
 
-    return true;
+    for(size_t i = 0; i < tree->root->value.lenght; i++)
+    {
+        TreeNode* node = tree->root->children[i];
+        if(!node) continue;
+
+        if(node->type != NODE_STRING) continue;
+
+        const char* cmd = node->value.string;
+
+        for(size_t j = 0; j < COMMANDS_COUNT; j++)
+        {
+            if(!strcmp(cmd, COMMANDS[j].command))
+            {
+                if(i + COMMANDS[j].argc >= tree->root->value.lenght) continue;
+
+                COMMANDS[j].command_func(info, tree->root->children + i + 1);
+                i += COMMANDS[j].argc;
+            }
+        }
+    }
 }
 
 
@@ -110,6 +123,15 @@ static Tree* ParseArguments(const char* buffer)
 
 
     tree->root = ParseArgument(&buffer);
+
+    // if(tree->root)
+    // {
+    //     TreeNodePrint(tree->root);
+    // }
+    // else
+    // {
+    //     printf("NO ROOT\n");
+    // }
 
     return tree;
 }
@@ -192,8 +214,15 @@ static TreeNode* ParseString(const char** buffer)
 
     if (sscanf(*buffer, "%" TO_STR(BUFFER_SIZE) "[^\"]", local_buffer) == 1) 
     {
-        local_buffer[BUFFER_SIZE] = '\0';
         (*buffer) += strlen(local_buffer);
+
+        if(**buffer != '\"')
+        {
+            return NULL;
+        }
+
+        local_buffer[BUFFER_SIZE] = '\0';
+
         (*buffer)++;
         
         TreeNode* node = TreeNodeCreate();
@@ -237,7 +266,6 @@ static TreeNode* ParseArray(const char** buffer)
         TreeNode* child = ParseArgument(buffer);
         if(!child)
         {
-            printf("NO CHILD");
             TreeNodeDestroy(node);
             return NULL;
         }

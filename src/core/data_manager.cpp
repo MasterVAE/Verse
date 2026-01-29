@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "data_manager.h"
 
@@ -20,7 +21,7 @@ Player* FindPlayerByNickname(const char* nickname)
     return NULL;
 }
 
-Player* LogIn(const char* nickname, const char* password)
+Player* LogInPlayer(const char* nickname, const char* password)
 {
     assert(nickname);
     assert(password);
@@ -33,9 +34,9 @@ Player* LogIn(const char* nickname, const char* password)
     return NULL;
 
 }
-Player* Register(const char* nickname, const char* password)
+Player* RegisterPlayer(const char* nickname, const char* password)
 {
-    Player* player = LogIn(nickname, password);
+    Player* player = LogInPlayer(nickname, password);
     if(player) return player;
 
     Player* new_player = (Player*)calloc(1, sizeof(Player));

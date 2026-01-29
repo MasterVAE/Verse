@@ -10,10 +10,10 @@ TARGET ?= DEBUG
 
 CC = g++
 DEBUG_FLAGS = -D \
-                                _DEBUG \
-                                -ggdb3 \
-                                -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,$\
-                                nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
+                _DEBUG \
+                -ggdb3 \
+                -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,$\
+                nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
 CFLAGS = -std=c++17 -Wall \
                 -Wextra \

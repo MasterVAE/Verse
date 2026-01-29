@@ -21,7 +21,7 @@ int CoreStartup()
 
     WORKING = true;
 
-
+    // Запуск сервера подключений в отдельном потоке
     if (pthread_create(&THREADS[0], NULL, NetServerStartup, NULL) != 0) 
     {
         fprintf(stderr, "Creating thread for net server failed\n");
@@ -29,6 +29,7 @@ int CoreStartup()
     }
     pthread_detach(THREADS[0]);
 
+    // Запуск игрового сервера в отдельном потоке
     if (pthread_create(&THREADS[1], NULL, GameServerStartup, NULL) != 0) 
     {
         fprintf(stderr, "Creating thread for game server failed\n");
@@ -42,6 +43,9 @@ int CoreStartup()
 
     printf("[CORE] Core shutting down...\n");
 
+    NetServerShutdown();
+    GameServerShutdown();
+
     printf("[CORE] Core shut down\n");
 
     return EXIT_SUCCESS;
@@ -49,9 +53,6 @@ int CoreStartup()
 
 void CoreShutdown()
 {
-    NetServerShutdown();
-    GameServerShutdown();
-
     WORKING = false;
 }
 

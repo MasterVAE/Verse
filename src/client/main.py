@@ -8,9 +8,6 @@ def send_data_tcp(host='ru.tuna.am', port=37710):
         # Создаем TCP сокет
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
-        # Устанавливаем таймаут (в секундах)
-        client_socket.settimeout(5)
-        
         # Подключаемся к серверу
         print(f"Подключаюсь к {host}:{port}...")
         client_socket.connect((host, port))
@@ -24,17 +21,17 @@ def send_data_tcp(host='ru.tuna.am', port=37710):
 
             # Отправляем данные (не забудьте преобразовать строку в байты)
             message = input()
+            message = str(len(message)) + " " + message
+
             if isinstance(message, str):
                 message = message.encode('utf-8')
+
+   
 
             client_socket.sendall(message)
             print(f"Отправлено {len(message)} байт")
 
-            # Опционально: получаем ответ от сервера
-
         
-    except socket.timeout:
-        print("Таймаут подключения!")
     except ConnectionRefusedError:
         print("Соединение отклонено. Убедитесь, что сервер запущен.")
     except Exception as e:

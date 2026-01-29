@@ -7,94 +7,98 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include <assert.h>
+
 #include "net_server.h"
 #include "core.h"
+#include "data_manager.h"
+#include "net_request.h"
 
 static void* HandleClient(void* arg);
 
 size_t CLIENTS = 0;
 static bool WORKING = true;
 
-// Структура для хранения информации о потоке
-struct ThreadInfo 
-{
-    pthread_t thread;
-    bool in_use;
-};
-
 // Массив информации о потоках
 static ThreadInfo THREAD_INFO[MAX_CLIENTS];
 
-// Структура для передачи данных в поток
-struct ClientData 
+void SendAll(const char* message)
 {
-    int client_socket;
-    sockaddr_in client_addr;
-    int thread_index;  // Индекс в массиве THREAD_INFO
-};
+    assert(message);
+
+    for(size_t i = 0; i < MAX_CLIENTS; i++)
+    {
+        if(THREAD_INFO[i].in_use)
+        {
+            send(THREAD_INFO[i].data->client_socket, message, strlen(message), 0);
+        }
+    }
+}
+
+void SendUser(const char* username, const char* message)
+{
+    assert(username);
+    assert(message);
+
+    Player* player = FindPlayerByNickname(username);
+    if(!player || !player->online) return;
+    
+    send(player->thread->data->client_socket, message, strlen(message), 0);
+}
+
+
+
 
 static void* HandleClient(void* arg) 
 {
-    ClientData* data = (ClientData*)arg;
+    ThreadInfo* info = (ThreadInfo*)arg;
+    ClientData* data = info->data;
     int client_socket = data->client_socket;
-    sockaddr_in client_addr = data->client_addr;
-    int thread_index = data->thread_index;
     
-    char client_ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-    int client_port = ntohs(client_addr.sin_port);
-    
-    printf("[NET SERVER THREAD] Client %s:%d connected\n", client_ip, client_port);
+    printf("[NET SERVER THREAD %lu] Client connected to pipe\n", info->num);
     
     char buffer[BUFFER_SIZE] = {0};
+
     const char* welcome = "Welcome! Type 'exit' to quit.\n";
     send(client_socket, welcome, strlen(welcome), 0);
     
     while (WORKING) 
     {
         memset(buffer, 0, BUFFER_SIZE);
-        int bytes_read = read(client_socket, buffer, BUFFER_SIZE - 1);
+        ssize_t bytes_read = read(client_socket, buffer, BUFFER_SIZE - 1);
         
-        if (bytes_read <= 0) {
-            printf("[NET SERVER THREAD] Client %s:%d disconnected\n", client_ip, client_port);
+        if (bytes_read <= 0) 
+        {
+            printf("[NET SERVER THREAD %lu] Client disconnected\n", info->num);
             break;
         }
         
         buffer[bytes_read] = '\0';
-        
-        printf("[NET SERVER THREAD] %s:%d: %s\n", client_ip, client_port, buffer);
-        
-        if (strncmp(buffer, "exit", 4) == 0 || strncmp(buffer, "quit", 4) == 0) 
-        {
-            const char* bye = "Goodbye!\n";
-            send(client_socket, bye, strlen(bye), 0);
-            break;
-        }
-        
-        if (strncmp(buffer, "shutdown", 4) == 0) 
-        {
-            const char* bye = "Goodbye!\n";
-            send(client_socket, bye, strlen(bye), 0);
-            CoreShutdown();
-            break;
-        }
-        
-        char response[BUFFER_SIZE];
-        snprintf(response, sizeof(response), "Echo: %s\n", buffer);
-        send(client_socket, response, strlen(response), 0);
+
+        printf("[NET SERVER THREAD %lu] %lu:%s\n", info->num, strlen(buffer), buffer);
+
+        // Обрабатываем запрос пользователя
+        if(!ParseRequest(info, buffer)) break;
     }
     
     close(client_socket);
     
     // Освобождаем слот в массиве потоков
-    THREAD_INFO[thread_index].in_use = false;
+    info->in_use = false;
     CLIENTS--;
     
-    printf("[NET SERVER THREAD] Connection %s:%d closed\n", client_ip, client_port);
+    printf("[NET SERVER THREAD %lu] Connection closed\n", info->num);
     
     free(data); // Освобождаем память структуры
     pthread_exit(NULL);
 }
+
+
+
+
+
+
+
 
 void* NetServerStartup(void* data) 
 {
@@ -103,9 +107,10 @@ void* NetServerStartup(void* data)
     WORKING = true;
     
     // Инициализация информации о потоках
-    for (int i = 0; i < MAX_CLIENTS; i++) 
+    for (size_t i = 0; i < MAX_CLIENTS; i++) 
     {
         THREAD_INFO[i].in_use = false;
+        THREAD_INFO[i].num = i;
     }
     
     int server_fd;
@@ -145,6 +150,7 @@ void* NetServerStartup(void* data)
     }
     
     printf("[NET SERVER] Net server started up\n");
+
     printf("\n[NET SERVER] Multi-threaded server listening on port %d\n", PORT);
     printf("[NET SERVER] Maximum clients: %d\n", MAX_CLIENTS);
     
@@ -183,15 +189,14 @@ void* NetServerStartup(void* data)
         // Создаем структуру данных для потока
         ClientData* client_data = (ClientData*)malloc(sizeof(ClientData));
         client_data->client_socket = client_socket;
-        client_data->client_addr = address;
-        client_data->thread_index = thread_index;
         
         // Отмечаем слот как занятый
         THREAD_INFO[thread_index].in_use = true;
+        THREAD_INFO[thread_index].data = client_data;
         
         // Создаем поток для обработки клиента
         if (pthread_create(&THREAD_INFO[thread_index].thread, NULL,
-                          HandleClient, (void*)client_data) != 0) 
+                          HandleClient, (void*)&THREAD_INFO[thread_index]) != 0) 
         {
             perror("pthread_create failed");
             THREAD_INFO[thread_index].in_use = false;
@@ -207,7 +212,7 @@ void* NetServerStartup(void* data)
         printf("[NET SERVER] New client accepted. Total connections: %lu\n", CLIENTS);
     }
     
-    printf("[NET SERVER] Net server shutting down...");
+    printf("[NET SERVER] Net server shutting down...\n");
 
     // Ожидание завершения всех потоков при shutdown
     for (int i = 0; i < MAX_CLIENTS; i++) 

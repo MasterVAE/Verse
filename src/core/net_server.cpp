@@ -22,24 +22,11 @@ static bool WORKING = true;
 // Массив информации о потоках
 static ThreadInfo THREAD_INFO[MAX_CLIENTS];
 
-void SendAll(const char* message)
-{
-    assert(message);
-
-    for(size_t i = 0; i < MAX_CLIENTS; i++)
-    {
-        if(THREAD_INFO[i].in_use)
-        {
-            send(THREAD_INFO[i].data->client_socket, message, strlen(message), 0);
-        }
-    }
-}
-
 static void* HandleClient(void* arg) 
 {
     ThreadInfo* info = (ThreadInfo*)arg;
-    ClientData* data = info->data;
-    int client_socket = data->client_socket;
+    ClientData* client_data = info->data;
+    int client_socket = client_data->client_socket;
     
     printf("[NET SERVER THREAD %lu] Client connected to pipe\n", info->num);
     
@@ -77,12 +64,9 @@ static void* HandleClient(void* arg)
     
     printf("[NET SERVER THREAD %lu] Connection closed\n", info->num);
     
-    free(data); // Освобождаем память структуры
+    free(client_data); // Освобождаем память структуры
     pthread_exit(NULL);
 }
-
-
-
 
 
 

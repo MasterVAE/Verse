@@ -27,6 +27,7 @@ struct ThreadInfo
     bool in_use;
 };
 
+// Структура для хранения информации о игроке
 struct Player
 {
     const char* nickname;
@@ -37,7 +38,5 @@ struct Player
 
     Player* next;
 };
-
-void SendAll(const char* message);
 
 #endif // NET_SERVER_H

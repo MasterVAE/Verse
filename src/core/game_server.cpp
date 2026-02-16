@@ -14,7 +14,7 @@ void* GameServerStartup(void* data)
 
     while(WORKING)
     {
-
+        // TODO
     }
 
     printf("[GAME SERVER] Game server shutting down...\n");

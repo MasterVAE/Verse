@@ -53,10 +53,12 @@ Player* RegisterPlayer(const char* nickname, const char* password)
 
 void Save(const char* filename)
 {
+    // TODO
     assert(filename);
 }
 
 void Load(const char* filename)
 {
+    // TODO
     assert(filename);
 }

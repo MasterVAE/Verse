@@ -9,6 +9,7 @@
 
 #include "net_server.h"
 #include "game_server.h"
+#include "data_manager.h"
 #include "core.h"
 
 static bool WORKING = true;
@@ -36,6 +37,8 @@ int CoreStartup()
         return EXIT_FAILURE;
     }
     pthread_detach(THREADS[1]);
+
+    Load();
 
     printf("[CORE] Core started\n");
 

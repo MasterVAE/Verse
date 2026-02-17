@@ -6,8 +6,10 @@
 Player* FindPlayerByNickname(const char* nickname);
 Player* LogInPlayer(const char* nickname, const char* password);
 Player* RegisterPlayer(const char* nickname, const char* password);
+bool LogOutPlayer(ThreadInfo* thread);
+bool DeletePlayer(ThreadInfo* thread);
 
-void Save(const char* filename);
-void Load(const char* filename);
+bool Save();
+bool Load();
 
 #endif // DATA_MANAGER_H

@@ -30,13 +30,16 @@ struct ThreadInfo
 // Структура для хранения информации о игроке
 struct Player
 {
-    const char* nickname;
-    const char* password;
+    char* nickname;
+    char* password;
 
     ThreadInfo* thread;
     bool online;
 
     Player* next;
+    Player* prev;
 };
+
+ThreadInfo* GetThreads();
 
 #endif // NET_SERVER_H

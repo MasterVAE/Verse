@@ -4,4 +4,6 @@
 void* GameServerStartup(void* data);
 void GameServerShutdown();
 
+void UpdateData();
+
 #endif // NET_SERVER_H

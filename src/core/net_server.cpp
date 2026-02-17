@@ -22,6 +22,7 @@ static bool WORKING = true;
 // Массив информации о потоках
 static ThreadInfo THREAD_INFO[MAX_CLIENTS];
 
+// Контроль TCP туннеля с пользователем
 static void* HandleClient(void* arg) 
 {
     ThreadInfo* info = (ThreadInfo*)arg;
@@ -31,9 +32,6 @@ static void* HandleClient(void* arg)
     printf("[NET SERVER THREAD %lu] Client connected to pipe\n", info->num);
     
     char buffer[BUFFER_SIZE] = {0};
-
-    const char* welcome = "Welcome! Type 'exit' to quit.\n";
-    send(client_socket, welcome, strlen(welcome), 0);
     
     while (WORKING) 
     {
@@ -71,7 +69,7 @@ static void* HandleClient(void* arg)
 
 
 
-
+// Запуск сервера сетевых подключений
 void* NetServerStartup(void* data) 
 {
     printf("[NET SERVER] Net server starting up...\n");
@@ -205,4 +203,9 @@ void* NetServerStartup(void* data)
 void NetServerShutdown() 
 {
     WORKING = false;
+}
+
+ThreadInfo* GetThreads()
+{
+    return THREAD_INFO;
 }

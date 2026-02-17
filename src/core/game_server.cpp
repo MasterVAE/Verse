@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <unistd.h>
 
 #include "game_server.h"
 
 static bool WORKING = true;
 
+// Запуск сервера контроля мира
 void* GameServerStartup(void* data)
 {
     printf("[GAME SERVER] Game server starting up...\n");
@@ -14,6 +16,8 @@ void* GameServerStartup(void* data)
 
     while(WORKING)
     {
+        usleep(100000);
+        printf("working\n");
         // TODO
     }
 

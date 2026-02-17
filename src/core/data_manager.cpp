@@ -134,27 +134,27 @@ bool Load()
     bool flag = true;
     while(flag)
     {
-        char login[100] = {0};
+        char nickname[100] = {0};
         char password[100] = {0};
 
-        if(fscanf(file, "%99s %99s ", login, password) < 2)
+        if(fscanf(file, "%99s %99s ", nickname, password) < 2)
         {
             flag = false;
         }
         else
         {
-            // Player* new_player = (Player*)calloc(1, sizeof(Player));
-            // if(!new_player) return false;
-// 
-            // new_player->nickname = strdup(nickname);
-            // new_player->password = strdup(password);
-// 
-            // new_player->next = players;
-            // if(players)
-            // {
-                // players->prev = new_player;
-            // }
-            // players = new_player;
+            Player* new_player = (Player*)calloc(1, sizeof(Player));
+            if(!new_player) return false;
+ 
+            new_player->nickname = strdup(nickname);
+            new_player->password = strdup(password);
+
+            new_player->next = players;
+            if(players)
+            {
+                players->prev = new_player;
+            }
+            players = new_player;
         }
     }
 

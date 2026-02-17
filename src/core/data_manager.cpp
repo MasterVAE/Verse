@@ -17,7 +17,7 @@ Player* FindPlayerByNickname(const char* nickname)
     Player* player = players;
     while(player)
     {
-        if(player->nickname == nickname) return player;
+        if(!strcmp(player->nickname, nickname)) return player;
 
         player = player->next;
     }
@@ -32,16 +32,20 @@ Player* LogInPlayer(const char* nickname, const char* password)
     assert(password);
     
     Player* player = FindPlayerByNickname(nickname);
-    if(!player) return player;
+    if(!player) return NULL;
 
-    if(player->password == password) return player;
-
+    if(!strcmp(player->password, password)) return player;
     return NULL;
 }
 
 // Зарегестрироваться по никнейму и паролю
 Player* RegisterPlayer(const char* nickname, const char* password)
 {
+    assert(nickname);
+    assert(password);
+
+    //TODO check if nickname is correct
+
     Player* player = LogInPlayer(nickname, password);
     if(player) return player;
 
@@ -67,6 +71,11 @@ bool DeletePlayer(ThreadInfo* thread)
 
     Player* player = thread->player;
     if(!player) return false;
+
+    if(players == player)
+    {
+        players = player->next;
+    }
 
     if(player->prev)
     {
@@ -107,7 +116,7 @@ bool Save()
     Player* player = players;
     while(player)
     {
-        fprintf(file, "%s:%s:", player->nickname, player->password);
+        fprintf(file, "%s %s ", player->nickname, player->password);
         player = player->next;
     }
 
@@ -119,6 +128,37 @@ bool Save()
 // Загрузить последнее сохранение сервера
 bool Load()
 {
-    // TODO
-    return 1;
+    FILE* file = fopen(FILENAME, "w+");
+    if(!file) return false;
+    
+    bool flag = true;
+    while(flag)
+    {
+        char login[100] = {0};
+        char password[100] = {0};
+
+        if(fscanf(file, "%99s %99s ", login, password) < 2)
+        {
+            flag = false;
+        }
+        else
+        {
+            // Player* new_player = (Player*)calloc(1, sizeof(Player));
+            // if(!new_player) return false;
+// 
+            // new_player->nickname = strdup(nickname);
+            // new_player->password = strdup(password);
+// 
+            // new_player->next = players;
+            // if(players)
+            // {
+                // players->prev = new_player;
+            // }
+            // players = new_player;
+        }
+    }
+
+    Save();
+
+    return true;
 }

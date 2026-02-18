@@ -9,6 +9,8 @@ void NetServerShutdown();
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 100
 
+const size_t DATA_COUNT = 60;
+
 struct Player;
 
 // Структура для передачи данных в поток
@@ -25,6 +27,13 @@ struct ThreadInfo
     ClientData* data;
     Player* player;
     bool in_use;
+};
+
+struct Server
+{
+    Player* players;
+    double data[DATA_COUNT];
+    size_t data_start;
 };
 
 // Структура для хранения информации о игроке

@@ -26,15 +26,17 @@ void* GameServerStartup(void* data)
     WORKING = true;
     THREAD_INFO = GetThreads();
 
+    CreateServer();
+
     printf("[GAME SERVER] Game server started up\n");
 
     size_t counter = 0;
 
     while(WORKING)
     {
-        usleep(100000);
+        usleep(200000);
         counter++;
-        if(counter >= 600)
+        if(counter >= 300)
         {
             counter = 0;
             Tick();
@@ -49,7 +51,10 @@ void* GameServerStartup(void* data)
         }
     }
 
+
     printf("[GAME SERVER] Game server shutting down...\n");
+
+    DestroyServer();
 
     printf("[GAME SERVER] Game server shuted down\n");
 

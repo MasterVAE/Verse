@@ -9,6 +9,10 @@ Player* RegisterPlayer(const char* nickname, const char* password);
 bool LogOutPlayer(ThreadInfo* thread);
 bool DeletePlayer(ThreadInfo* thread);
 
+Server* GetServer();
+void CreateServer();
+void DestroyServer();
+
 bool Save();
 bool Load();
 

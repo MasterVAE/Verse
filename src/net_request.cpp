@@ -112,11 +112,6 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             if(LogOutPlayer(info)) RESPONSE("208 Successful logout\n");
             RESPONSE("308 Failure logout\n");
         }
-        case(PROTOCOL_CLIENT_DELETE_ACCOUNT):
-        {
-            if(DeletePlayer(info)) RESPONSE("210 Successful delete\n");
-            RESPONSE("310 Failure delete\n");
-        }
         default:
         {
             RESPONSE("301 Incorrect request\n");

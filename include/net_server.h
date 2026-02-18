@@ -12,6 +12,8 @@ void NetServerShutdown();
 const size_t DATA_COUNT = 60;
 
 struct Player;
+struct Agent;
+struct Bot;
 
 // Структура для передачи данных в поток
 struct ClientData 
@@ -37,6 +39,39 @@ struct Server
     size_t data_start;
 };
 
+
+// Структура для хранения информации о лоте
+struct Lot
+{
+    bool isSell;
+
+    size_t amount;
+    size_t price;
+
+    Agent* owner;
+};
+
+// Структура для хранения информации о боте
+struct Bot
+{
+    Agent* agent;
+};
+
+// Структура агента на бирже
+struct Agent
+{
+    bool isPlayer;
+
+    Player* player;
+    Bot* bot;
+
+    size_t money;
+    size_t stocks;
+
+    size_t expected_money;
+    size_t expected_stocks;
+};
+
 // Структура для хранения информации о игроке
 struct Player
 {
@@ -48,8 +83,7 @@ struct Player
     Player* next;
     Player* prev;
 
-    size_t money;
-    size_t stocks;
+    Agent* agent;
 };
 
 ThreadInfo* GetThreads();

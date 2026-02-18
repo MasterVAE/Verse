@@ -29,6 +29,7 @@ struct ThreadInfo
     bool in_use;
 };
 
+// Структура для хранения данных о мире
 struct Server
 {
     Player* players;
@@ -43,10 +44,12 @@ struct Player
     char* password;
 
     ThreadInfo* thread;
-    bool online;
 
     Player* next;
     Player* prev;
+
+    size_t money;
+    size_t stocks;
 };
 
 ThreadInfo* GetThreads();

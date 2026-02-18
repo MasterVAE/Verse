@@ -16,6 +16,7 @@ static Server* server;
 
 static size_t PlayerCount();
 static bool CheckNicknameAndPassword(const char* nickname, const char* password);
+static Player* CreatePlayer(const char* nickname, const char* password);
 
 // Поиск игрока по никнейму
 Player* FindPlayerByNickname(const char* nickname)
@@ -42,7 +43,7 @@ Player* LogInPlayer(const char* nickname, const char* password)
     Player* player = FindPlayerByNickname(nickname);
     if(!player) return NULL;
 
-    if(!strcmp(player->password, password)) return player;
+    if(!strcmp(player->password, password) && player->thread == NULL) return player;
     return NULL;
 }
 
@@ -57,20 +58,10 @@ Player* RegisterPlayer(const char* nickname, const char* password)
     Player* player = LogInPlayer(nickname, password);
     if(player) return player;
 
-    Player* new_player = (Player*)calloc(1, sizeof(Player));
-    if(!new_player) return NULL;
+    player = FindPlayerByNickname(nickname);
+    if(player) return NULL;
 
-    new_player->nickname = strdup(nickname);
-    new_player->password = strdup(password);
-
-    new_player->next = server->players;
-    if(server->players)
-    {
-        server->players->prev = new_player;
-    }
-    server->players = new_player;
-
-    return new_player;
+    return CreatePlayer(nickname, password);
 }
 
 bool DeletePlayer(ThreadInfo* thread)
@@ -142,6 +133,7 @@ bool Save()
     while(player)
     {
         fprintf(file, "%s %s ", player->nickname, player->password);
+        fprintf(file, "%lu %lu ", player->money, player->stocks);
         player = player->next;
     }
 
@@ -167,18 +159,10 @@ bool Load()
 
         fscanf(file, "%99s %99s ", nickname, password);
 
-        Player* new_player = (Player*)calloc(1, sizeof(Player));
-        if(!new_player) return false;
+        Player* player = CreatePlayer(nickname, password);
+        if(!player) return false;
 
-        new_player->nickname = strdup(nickname);
-        new_player->password = strdup(password);
-        new_player->next = server->players;
-
-        if(server->players)
-        {
-            server->players->prev = new_player;
-        }
-        server->players = new_player;
+        fscanf(file, "%lu %lu ", &player->money, &player->stocks);
     }
 
     printf("[DATA MANAGER] Data loaded\n");
@@ -246,4 +230,28 @@ static bool CheckNicknameAndPassword(const char* nickname, const char* password)
     }
 
     return true;
+}
+
+static Player* CreatePlayer(const char* nickname, const char* password)
+{
+    assert(nickname);
+    assert(password);
+
+    Player* new_player = (Player*)calloc(1, sizeof(Player));
+    if(!new_player) return NULL;
+
+    new_player->nickname = strdup(nickname);
+    new_player->password = strdup(password);
+
+    new_player->money = 0;
+    new_player->stocks = 0;
+
+    new_player->next = server->players;
+    if(server->players)
+    {
+        server->players->prev = new_player;
+    }
+    server->players = new_player;
+
+    return new_player;
 }

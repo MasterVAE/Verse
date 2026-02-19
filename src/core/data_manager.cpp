@@ -22,8 +22,7 @@ static Agent* CreateAgent(bool isPlayer);
 static void DestroyAgent(Agent* agent);
 
 static Lot* CreateLot(bool isSell, size_t amount, size_t price);
-static void DestroyLot(Lot* lot);
-static size_t LotCount();
+
 
 static size_t LOT_ID = 0;
 
@@ -395,7 +394,7 @@ static Lot* CreateLot(bool isSell, size_t amount, size_t price)
 
 
 // Уничтожение структура лота
-static void DestroyLot(Lot* lot)
+void DestroyLot(Lot* lot)
 {
     assert(lot);
 
@@ -420,7 +419,7 @@ static void DestroyLot(Lot* lot)
 
 
 // Подсчет количсетва лотов
-static size_t LotCount()
+size_t LotCount()
 {
     Lot* lot = server->lots;
     size_t count = 0;

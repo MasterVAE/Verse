@@ -18,7 +18,7 @@ void Tick();
 static bool WORKING = true;
 
 static ThreadInfo* THREAD_INFO;
-
+Server* server;
 
 
 
@@ -32,6 +32,7 @@ void* GameServerStartup(void* data)
     THREAD_INFO = GetThreads();
 
     CreateServer();
+    server = GetServer();
 
     printf("[GAME SERVER] Game server started up\n");
 
@@ -98,6 +99,10 @@ void SendGameData(ThreadInfo* info)
     }
 
     send(info->data->client_socket, buffer, strlen(buffer), 0); 
+
+
+    // TODO рассылка отсортированных лотов по протоколу
+    // TODO рассылка 60 тиков
 }
 
 
@@ -106,11 +111,39 @@ void SendGameData(ThreadInfo* info)
 // Один игровой тик (каждые 60 секунд)
 void Tick()
 {
-
+    // HONORABLE MENTION
     // int min = 1;
     // int max = 100;
     // int num_in_range = (rand() % (max - min + 1)) + min;
 
-    // TODO Обработка лотов
+
+    // Обработка покупки лотов
+    // TODO
+
+    // Обработка новых лотов
+    for(size_t i = 0; i < server->old_lots_count; i++)
+    {
+        DestroyLot(server->old_lots[i]);
+    }
+
+    size_t lot_count = LotCount();
+
+    server->old_lots = (Lot**)realloc(server->old_lots, lot_count * sizeof(Lot*));
+
+    Lot* lot = server->lots;
+    for(size_t i = 0; i < lot_count; i++, lot = lot->next)
+    {
+        server->old_lots[i] = lot;
+    }
+
+    server->lots = NULL;
+
+    Agent* agent = server->agents;
+    while(agent)
+    {
+        agent->want_sell_lot = NULL;
+        agent = agent->next;
+    }
+    
     Save();
 }

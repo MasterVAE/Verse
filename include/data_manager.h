@@ -99,4 +99,7 @@ struct Player
     Agent* agent;
 };
 
+void DestroyLot(Lot* lot);
+size_t LotCount();
+
 #endif // DATA_MANAGER_H

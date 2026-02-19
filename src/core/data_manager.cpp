@@ -18,7 +18,7 @@ static size_t PlayerCount();
 static bool CheckNicknameAndPassword(const char* nickname, const char* password);
 static Player* CreatePlayer(const char* nickname, const char* password);
 
-static Agent* CreateAgent();
+static Agent* CreateAgent(bool isPlayer);
 static void DestroyAgent(Agent* agent);
 
 
@@ -281,7 +281,7 @@ static Player* CreatePlayer(const char* nickname, const char* password)
     Player* new_player = (Player*)calloc(1, sizeof(Player));
     if(!new_player) return NULL;
 
-    new_player->agent = CreateAgent();
+    new_player->agent = CreateAgent(true);
     if(!new_player->agent)
     {
         free(new_player);
@@ -304,9 +304,35 @@ static Player* CreatePlayer(const char* nickname, const char* password)
 
 
 // Инициилизировать структуру агента
-static Agent* CreateAgent()
+static Agent* CreateAgent(bool isPlayer)
 {
-    // TODO
+    Agent* agent = (Agent*)calloc(1, sizeof(Agent));
+    if(!agent) return NULL;
+
+    agent->isPlayer = isPlayer;
+    agent->player = NULL;
+    agent->bot = NULL;
+    agent->money = 0;
+    agent->stocks = 0;
+    agent->expected_money = 0;
+    agent->expected_stocks = 0;
+    agent->want_buy_lots_count = 0;
+    agent->want_buy_lots = (Lot**)calloc(1, sizeof(Lot*));
+    if(!agent->want_buy_lots)
+    {
+        free(agent);
+        return NULL;
+    }
+
+    agent->prev = NULL;
+    agent->next = server->agents;
+    if(server->agents)
+    {
+        server->agents->prev = agent;
+    }
+    server->agents = agent;
+
+    return agent;
 }
 
 // Уничтожить структуру агента
@@ -314,5 +340,20 @@ static void DestroyAgent(Agent* agent)
 {
     assert(agent);
 
-    // TODO
+    free(agent->want_buy_lots);
+
+    if(agent->prev)
+    {
+        agent->prev->next = agent->next;
+    }
+    if(agent->next)
+    {
+        agent->next->prev = agent->prev;
+    }
+    if(server->agents == agent)
+    {
+        server->agents = agent->next;
+    }
+
+    free(agent);
 }

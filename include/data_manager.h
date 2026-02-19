@@ -15,35 +15,50 @@ Server* GetServer();
 void CreateServer();
 void DestroyServer();
 
+bool Buy(Agent* agent, size_t lot_number);
+bool Sell(Agent* agent, size_t amount, size_t price);
+
 bool Save();
 bool Load();
+
+struct Lot;
 
 // Структура для хранения данных о мире
 struct Server
 {
     Player* players;
-    double data[DATA_COUNT];
-    size_t data_start;
 
     Agent* agents;
+
+    size_t old_lots_count;
+    Lot** old_lots;
+
+    Lot* lots;
 };
 
 
 // Структура для хранения информации о лоте
 struct Lot
 {
+    size_t id;
+
     bool isSell;
 
     size_t amount;
     size_t price;
 
     Agent* owner;
+
+    Lot* next;
+    Lot* prev;
 };
 
 // Структура для хранения информации о боте
 struct Bot
 {
     Agent* agent;
+
+    // TODO
 };
 
 // Структура агента на бирже

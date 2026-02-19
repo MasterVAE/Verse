@@ -21,10 +21,11 @@ static Player* CreatePlayer(const char* nickname, const char* password);
 static Agent* CreateAgent(bool isPlayer);
 static void DestroyAgent(Agent* agent);
 
+static Lot* CreateLot(bool isSell, size_t amount, size_t price);
+static void DestroyLot(Lot* lot);
+static size_t LotCount();
 
-
-
-
+static size_t LOT_ID = 0;
 
 // Поиск игрока по никнейму
 Player* FindPlayerByNickname(const char* nickname)
@@ -192,12 +193,9 @@ void CreateServer()
     if(!serv) CoreShutdown();
 
     serv->players = NULL;
-    serv->data_start = 0;
+
+    serv->old_lots_count = 0;
     
-    for(size_t i = 0; i < DATA_COUNT; i++)
-    {
-        serv->data[i] = 0;
-    }
 
     server = serv;
 }
@@ -356,4 +354,96 @@ static void DestroyAgent(Agent* agent)
     }
 
     free(agent);
+}
+
+
+
+// Инициализация лота
+static Lot* CreateLot(bool isSell, size_t amount, size_t price)
+{
+    Lot* lot = (Lot*)calloc(1, sizeof(Lot));
+    if(!lot) return NULL;
+
+    lot->amount = 0;
+    lot->price = 0;
+    lot->owner = NULL;
+
+    lot->prev = NULL;
+    lot->next = server->lots;
+
+    if(server->lots)
+    {
+        server->lots->prev = lot;
+    }
+
+    server->lots = lot;
+
+    lot->id = LOT_ID++;
+
+    return lot;
+}
+
+
+
+
+// Уничтожение структура лота
+static void DestroyLot(Lot* lot)
+{
+    assert(lot);
+
+    if(lot->prev)
+    {
+        lot->prev->next = lot->next;
+    }
+    if(lot->next)
+    {
+        lot->next->prev = lot->prev;
+    }
+    if(server->lots == lot)
+    {
+        server->lots =  lot->next;
+    }
+    free(lot);
+}
+
+
+
+
+
+// Подсчет количсетва лотов
+static size_t LotCount()
+{
+    Lot* lot = server->lots;
+    size_t count = 0;
+
+    while(lot)
+    {
+        lot = lot->next;
+        count++;
+    }
+
+    return count;
+}
+
+
+
+
+// Запрос на покупку лота
+bool Buy(Agent* agent, size_t lot_number)
+{
+    // TODO
+    return true;
+}
+
+
+
+
+// Выставить на продажу
+bool Sell(Agent* agent, size_t amount, size_t price)
+{
+    assert(agent);
+    if(number == 0) return false;
+    if(number > agent->)
+    // TODO
+    return true;
 }

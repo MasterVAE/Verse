@@ -112,6 +112,28 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             if(LogOutPlayer(info)) RESPONSE("208 Successful logout\n");
             RESPONSE("308 Failure logout\n");
         }
+        case(PROTOCOL_CLIENT_BUY):
+        {
+            size_t id = 0;
+            sscanf(buffer + 4, "%lu", &id);
+
+            if(!info->player) RESPONSE("305 Lot error\n");
+
+            if(Buy(info->player->agent, id)) RESPONSE("205 Lot accepted\n");
+            RESPONSE("305 Lot error\n");
+        }
+        case(PROTOCOL_CLIENT_SELL):
+        {
+            size_t amount = 0;
+            size_t price = 0;
+
+            sscanf(buffer + 4, "%lu %lu", &amount, &price);
+
+            if(!info->player) RESPONSE("305 Lot error\n");
+
+            if(Sell(info->player->agent, amount, price)) RESPONSE("205 Lot accepted\n");
+            RESPONSE("305 Lot error\n");
+        }
         default:
         {
             RESPONSE("301 Incorrect request\n");

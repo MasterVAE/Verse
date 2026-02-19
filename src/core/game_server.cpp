@@ -105,5 +105,7 @@ void SendGameData(ThreadInfo* info)
 // Один игровой тик (каждые 60 секунд)
 void Tick()
 {
+
+    // TODO Обработка лотов
     Save();
 }

@@ -51,6 +51,9 @@ struct Lot
 
     Lot* next;
     Lot* prev;
+
+    size_t agents_want_count;
+    Agent** agents_want;
 };
 
 // Структура для хранения информации о боте
@@ -73,7 +76,6 @@ struct Agent
     size_t stocks;
 
     size_t expected_money;
-    size_t expected_stocks;
 
     size_t want_buy_lots_count;
     Lot** want_buy_lots;

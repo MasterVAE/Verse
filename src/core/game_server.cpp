@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "game_server.h"
 #include "net_server.h"
@@ -105,6 +106,10 @@ void SendGameData(ThreadInfo* info)
 // Один игровой тик (каждые 60 секунд)
 void Tick()
 {
+
+    // int min = 1;
+    // int max = 100;
+    // int num_in_range = (rand() % (max - min + 1)) + min;
 
     // TODO Обработка лотов
     Save();

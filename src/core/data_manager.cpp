@@ -313,7 +313,6 @@ static Agent* CreateAgent(bool isPlayer)
     agent->money = 0;
     agent->stocks = 0;
     agent->expected_money = 0;
-    agent->expected_stocks = 0;
     agent->want_buy_lots_count = 0;
     agent->want_buy_lots = (Lot**)calloc(1, sizeof(Lot*));
     if(!agent->want_buy_lots)
@@ -364,6 +363,15 @@ static Lot* CreateLot(bool isSell, size_t amount, size_t price)
     Lot* lot = (Lot*)calloc(1, sizeof(Lot));
     if(!lot) return NULL;
 
+    lot->agents_want = (Agent**)calloc(1, sizeof(Agent*));
+    if(!lot->agents_want)
+    {
+        free(lot);
+        return NULL;
+    }
+
+    lot->agents_want_count = 0;
+
     lot->amount = 0;
     lot->price = 0;
     lot->owner = NULL;
@@ -403,6 +411,7 @@ static void DestroyLot(Lot* lot)
     {
         server->lots =  lot->next;
     }
+    free(lot->agents_want);
     free(lot);
 }
 
@@ -431,7 +440,32 @@ static size_t LotCount()
 // Запрос на покупку лота
 bool Buy(Agent* agent, size_t lot_number)
 {
-    // TODO
+    assert(agent);
+
+    Lot* lot = NULL;
+    for(size_t i = 0; i < server->old_lots_count; i++)
+    {
+        if(server->old_lots[i]->id == lot_number)
+        {
+            lot = server->old_lots[i];
+        }
+    }
+
+    if(!lot) return false;
+
+    if(lot->price > agent->expected_money) return false;
+
+    agent->expected_money -= lot->price;
+
+    agent->want_buy_lots_count++;
+    agent->want_buy_lots = (Lot**)realloc(agent->want_buy_lots, 
+                                          sizeof(Lot*) * agent->want_buy_lots_count);
+    agent->want_buy_lots[agent->want_buy_lots_count - 1] = lot;
+
+    lot->agents_want_count++;
+    lot->agents_want = (Agent**)realloc(lot->agents_want, lot->agents_want_count * sizeof(Agent*));
+    lot->agents_want[lot->agents_want_count - 1] = agent;
+
     return true;
 }
 
@@ -442,8 +476,13 @@ bool Buy(Agent* agent, size_t lot_number)
 bool Sell(Agent* agent, size_t amount, size_t price)
 {
     assert(agent);
-    if(number == 0) return false;
-    if(number > agent->)
-    // TODO
+    if(amount == 0) return false;
+    if(amount > agent->stocks) return false;
+    if(agent->want_sell_lot) return false;
+
+    Lot* new_lot = CreateLot(true, amount, price);
+    new_lot->owner = agent;
+    agent->want_sell_lot = new_lot;
+
     return true;
 }

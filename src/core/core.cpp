@@ -16,6 +16,7 @@ static bool WORKING = true;
 
 pthread_t THREADS[2];
 
+// Запуск ядра
 int CoreStartup()
 {
     printf("[CORE] Core starting up...\n");
@@ -54,6 +55,8 @@ int CoreStartup()
     return EXIT_SUCCESS;
 }
 
+
+// Отключение ядра
 void CoreShutdown()
 {
     WORKING = false;

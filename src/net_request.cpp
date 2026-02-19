@@ -23,7 +23,7 @@
 
 #define TEXT(a) #a
 
-// PARSE REQUEST ON THREAD
+// Обработать запрос на потоке
 void ParseRequest(ThreadInfo* info, const char* buffer)
 {
     assert(info);

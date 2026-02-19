@@ -31,61 +31,6 @@ struct ThreadInfo
     bool in_use;
 };
 
-// Структура для хранения данных о мире
-struct Server
-{
-    Player* players;
-    double data[DATA_COUNT];
-    size_t data_start;
-};
-
-
-// Структура для хранения информации о лоте
-struct Lot
-{
-    bool isSell;
-
-    size_t amount;
-    size_t price;
-
-    Agent* owner;
-};
-
-// Структура для хранения информации о боте
-struct Bot
-{
-    Agent* agent;
-};
-
-// Структура агента на бирже
-struct Agent
-{
-    bool isPlayer;
-
-    Player* player;
-    Bot* bot;
-
-    size_t money;
-    size_t stocks;
-
-    size_t expected_money;
-    size_t expected_stocks;
-};
-
-// Структура для хранения информации о игроке
-struct Player
-{
-    char* nickname;
-    char* password;
-
-    ThreadInfo* thread;
-
-    Player* next;
-    Player* prev;
-
-    Agent* agent;
-};
-
 ThreadInfo* GetThreads();
 
 #endif // NET_SERVER_H

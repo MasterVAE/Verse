@@ -18,6 +18,14 @@ static size_t PlayerCount();
 static bool CheckNicknameAndPassword(const char* nickname, const char* password);
 static Player* CreatePlayer(const char* nickname, const char* password);
 
+static Agent* CreateAgent();
+static void DestroyAgent(Agent* agent);
+
+
+
+
+
+
 // Поиск игрока по никнейму
 Player* FindPlayerByNickname(const char* nickname)
 {
@@ -34,6 +42,11 @@ Player* FindPlayerByNickname(const char* nickname)
     return NULL;
 }
 
+
+
+
+
+
 // Залогиниться по никнейму и паролю
 Player* LogInPlayer(const char* nickname, const char* password)
 {
@@ -46,6 +59,11 @@ Player* LogInPlayer(const char* nickname, const char* password)
     if(!strcmp(player->password, password) && player->thread == NULL) return player;
     return NULL;
 }
+
+
+
+
+
 
 // Зарегестрироваться по никнейму и паролю
 Player* RegisterPlayer(const char* nickname, const char* password)
@@ -64,35 +82,13 @@ Player* RegisterPlayer(const char* nickname, const char* password)
     return CreatePlayer(nickname, password);
 }
 
-bool DeletePlayer(ThreadInfo* thread)
-{
-    assert(thread);
 
-    Player* player = thread->player;
-    if(!player) return false;
 
-    if(server->players == player)
-    {
-        server->players = player->next;
-    }
 
-    if(player->prev)
-    {
-        player->prev->next = player->next;
-    }
-    if(player->next)
-    {
-        player->next->prev = player->prev;
-    }
 
-    free(player->nickname);
-    free(player->password);
-    free(player);
-    thread->player = NULL;
 
-    return true;
-}
 
+// Разлогиниться игроку
 bool LogOutPlayer(ThreadInfo* thread)
 {
     assert(thread);
@@ -106,6 +102,13 @@ bool LogOutPlayer(ThreadInfo* thread)
     return true;
 }
 
+
+
+
+
+
+
+// Количество игроков
 static size_t PlayerCount()
 {
     size_t i = 0;
@@ -120,6 +123,11 @@ static size_t PlayerCount()
     return i;
 }
 
+
+
+
+
+
 // Сохранить данные сервера
 bool Save()
 {
@@ -133,7 +141,6 @@ bool Save()
     while(player)
     {
         fprintf(file, "%s %s ", player->nickname, player->password);
-        fprintf(file, "%lu %lu ", player->money, player->stocks);
         player = player->next;
     }
 
@@ -143,6 +150,11 @@ bool Save()
 
     return 1;
 }
+
+
+
+
+
 
 // Загрузить последнее сохранение сервера
 bool Load()
@@ -161,8 +173,6 @@ bool Load()
 
         Player* player = CreatePlayer(nickname, password);
         if(!player) return false;
-
-        fscanf(file, "%lu %lu ", &player->money, &player->stocks);
     }
 
     printf("[DATA MANAGER] Data loaded\n");
@@ -170,6 +180,12 @@ bool Load()
     return true;
 }
 
+
+
+
+
+
+// Инициилизировать структуру сервера
 void CreateServer()
 {
     Server* serv = (Server*)calloc(1, sizeof(Server));
@@ -186,6 +202,13 @@ void CreateServer()
     server = serv;
 }
 
+
+
+
+
+
+
+// Уничтожить структуру сервера
 void DestroyServer()
 {
     Player* player = server->players;
@@ -203,11 +226,23 @@ void DestroyServer()
     server = NULL;
 }
 
+
+
+
+
+
+// Получить структуру сервера (из других единиц трансляции)
 Server* GetServer()
 {
     return server;
 }
 
+
+
+
+
+
+// Проверить никнейм и пароль на корректность
 static bool CheckNicknameAndPassword(const char* nickname, const char* password)
 {
     assert(nickname);
@@ -232,6 +267,12 @@ static bool CheckNicknameAndPassword(const char* nickname, const char* password)
     return true;
 }
 
+
+
+
+
+
+// Инициилизировать структуру игрока
 static Player* CreatePlayer(const char* nickname, const char* password)
 {
     assert(nickname);
@@ -240,11 +281,15 @@ static Player* CreatePlayer(const char* nickname, const char* password)
     Player* new_player = (Player*)calloc(1, sizeof(Player));
     if(!new_player) return NULL;
 
+    new_player->agent = CreateAgent();
+    if(!new_player->agent)
+    {
+        free(new_player);
+        return NULL;
+    }
+
     new_player->nickname = strdup(nickname);
     new_player->password = strdup(password);
-
-    new_player->money = 0;
-    new_player->stocks = 0;
 
     new_player->next = server->players;
     if(server->players)
@@ -254,4 +299,20 @@ static Player* CreatePlayer(const char* nickname, const char* password)
     server->players = new_player;
 
     return new_player;
+}
+
+
+
+// Инициилизировать структуру агента
+static Agent* CreateAgent()
+{
+    // TODO
+}
+
+// Уничтожить структуру агента
+static void DestroyAgent(Agent* agent)
+{
+    assert(agent);
+
+    // TODO
 }

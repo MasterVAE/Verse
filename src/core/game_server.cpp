@@ -18,6 +18,10 @@ static bool WORKING = true;
 
 static ThreadInfo* THREAD_INFO;
 
+
+
+
+
 // Запуск сервера контроля мира
 void* GameServerStartup(void* data)
 {
@@ -61,11 +65,17 @@ void* GameServerStartup(void* data)
     return NULL;
 }
 
+// Выключение сервера контроля мира
 void GameServerShutdown()
 {
     WORKING = false;
 }
 
+
+
+
+
+// Разослать по потокам данные о мире
 void SendGameData(ThreadInfo* info)
 {
     char buffer[1024] = {0};
@@ -89,6 +99,10 @@ void SendGameData(ThreadInfo* info)
     send(info->data->client_socket, buffer, strlen(buffer), 0); 
 }
 
+
+
+
+// Один игровой тик (каждые 60 секунд)
 void Tick()
 {
     Save();

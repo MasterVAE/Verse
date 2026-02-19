@@ -22,6 +22,10 @@ static bool WORKING = true;
 // Массив информации о потоках
 static ThreadInfo THREAD_INFO[MAX_CLIENTS];
 
+
+
+
+
 // Контроль TCP туннеля с пользователем
 static void* HandleClient(void* arg) 
 {
@@ -65,6 +69,8 @@ static void* HandleClient(void* arg)
     free(client_data); // Освобождаем память структуры
     pthread_exit(NULL);
 }
+
+
 
 
 
@@ -200,11 +206,22 @@ void* NetServerStartup(void* data)
     return NULL;
 }
 
+
+
+
+
+// Отключение сервера сетевых подключений
 void NetServerShutdown() 
 {
     WORKING = false;
 }
 
+
+
+
+
+
+// Получить потоки из другой единицы трансляции
 ThreadInfo* GetThreads()
 {
     return THREAD_INFO;

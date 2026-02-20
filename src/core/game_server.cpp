@@ -20,8 +20,17 @@ static bool WORKING = true;
 static ThreadInfo* THREAD_INFO;
 Server* server;
 
+int comparat(const void* a, const void* b);
+int comparat(const void* a, const void* b)
+{
+    Lot* lot_a = *(Lot**)a;
+    Lot* lot_b = *(Lot**)b;
 
+    float cen_a = lot_a->price / (float)lot_a->amount;
+    float cen_b = lot_b->price / (float)lot_b->amount;
 
+    return cen_a > cen_b;
+}
 
 // Запуск сервера контроля мира
 void* GameServerStartup(void* data)
@@ -86,6 +95,7 @@ void SendGameData(ThreadInfo* info)
     sprintf(buffer, "004 ");
     i = strlen(buffer);
 
+    // Рассылка данных залогиненного игрока
     Player* player = info->player;
     if(!player)
     {
@@ -94,56 +104,110 @@ void SendGameData(ThreadInfo* info)
     }
     else
     {
-        sprintf(buffer + i, "1 %s ", player->nickname);
+        sprintf(buffer + i, "1 %s %lu %lu ", player->nickname, player->agent->stocks, player->agent->money);
         i = strlen(buffer);
+    }
+
+    // Рассылка лотов
+    sprintf(buffer + i, "%lu ", server->lots->count);
+    i = strlen(buffer);
+
+    ListElem* elem = server->lots->start;
+    while(elem)
+    {
+        Lot* lot = (Lot*)elem->value;
+
+        sprintf(buffer + i, "%lu %lu %lu ", lot->id, lot->amount, lot->price);
+        elem = elem->next; 
+
     }
 
     send(info->data->client_socket, buffer, strlen(buffer), 0); 
 
 
-    // TODO рассылка отсортированных лотов по протоколу
     // TODO рассылка 60 тиков
 }
 
 
-
+size_t ticks = 0;
 
 // Один игровой тик (каждые 60 секунд)
 void Tick()
 {
-    // HONORABLE MENTION
-    // int min = 1;
-    // int max = 100;
-    // int num_in_range = (rand() % (max - min + 1)) + min;
-
-
     // Обработка покупки лотов
-    // TODO
-
-    // Обработка новых лотов
     for(size_t i = 0; i < server->old_lots_count; i++)
     {
-        DestroyLot(server->old_lots[i]);
+        Lot* lot = server->old_lots[i];
+        if(lot->agents_want_count > 0)
+        {
+            int min = 0;
+            int max = lot->agents_want_count - 1;
+            int winner = (rand() % (max - min + 1)) + min;
+
+            Agent* buyer = lot->agents_want[winner];
+            buyer->money -= lot->price;
+            buyer->stocks += lot->amount;
+            lot->owner->money += lot->price;
+            lot->owner->stocks -= lot->amount;
+        }
+        DestroyLot(lot);
     }
 
-    size_t lot_count = LotCount();
-
-    server->old_lots = (Lot**)realloc(server->old_lots, lot_count * sizeof(Lot*));
-
-    Lot* lot = server->lots;
-    for(size_t i = 0; i < lot_count; i++, lot = lot->next)
+    // Обработка новых лотов
     {
-        server->old_lots[i] = lot;
+        size_t lot_count = server->lots->count;
+        server->old_lots_count = lot_count;
+
+        server->old_lots = (Lot**)realloc(server->old_lots, lot_count * sizeof(Lot*));
+
+        ListElem* elem = server->lots->start;
+        for(size_t i = 0; i < lot_count; i++, elem = elem->next)
+        {
+            server->old_lots[i] = (Lot*)elem->value;
+        }
+
+        ListDelete(server->lots, NULL);
+        server->lots = ListCreate();
     }
 
-    server->lots = NULL;
-
-    Agent* agent = server->agents;
-    while(agent)
     {
-        agent->want_sell_lot = NULL;
-        agent = agent->next;
+        ListElem* elem = server->agents->start;
+        {
+            while(elem)
+            {
+                Agent* agent = (Agent*)elem->value;
+
+                agent->want_sell_lot = NULL;
+                agent->expected_money = agent->money;
+
+                elem = elem->next;
+            }
+        }
+
+        if(server->old_lots_count > 0)
+        {
+            qsort(server->old_lots, server->old_lots_count, sizeof(Lot**), comparat);
+        }
     }
     
+    // Выплата дивидентов
+    {
+        if(ticks >= 24 * 60)
+        {
+            ticks = 0;
+
+            ListElem* elem = server->agents->start;
+            {
+                while(elem)
+                {
+                    Agent* agent = (Agent*)elem->value;
+
+                    agent->money += agent->stocks;
+
+                    elem = elem->next;
+                }
+            }
+        }
+    }
     Save();
 }

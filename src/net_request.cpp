@@ -15,10 +15,10 @@
 #include "protocol.h"
 
 
-#define RESPONSE(response)                                                  \
-{                                                                           \
-    send(info->data->client_socket, response, strlen(response), 0);         \
-    return;                                                                 \
+#define RESPONSE(response)                                                                         \
+{                                                                                                  \
+    if (info && info->data) send(info->data->client_socket, response, strlen(response), 0);        \
+    return;                                                                                        \
 }
 
 #define TEXT(a) #a
@@ -130,6 +130,8 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             sscanf(buffer + 4, "%lu %lu", &amount, &price);
 
             if(!info->player) RESPONSE("305 Lot error\n");
+
+            fprintf(stderr, "%p %p\n", info, info->data);
 
             if(Sell(info->player->agent, amount, price)) RESPONSE("205 Lot accepted\n");
             RESPONSE("305 Lot error\n");

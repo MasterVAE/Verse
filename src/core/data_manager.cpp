@@ -7,19 +7,18 @@
 #include "core.h"
 
 const char* FILENAME = "server.data";
-const char* POSSIBLE_SYMBOLS = "abcdefghijklmopqrstuvwxyz"
-                               "ABCDEFGHIJKLMOPQRSTUVWXYZ"
+const char* POSSIBLE_SYMBOLS = "abcdefghijklmnopqrstuvwxyz"
+                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "0123456789"
                                "_!@#$%^&*()-+=";
 
 static Server* server;
 
-static size_t PlayerCount();
 static bool CheckNicknameAndPassword(const char* nickname, const char* password);
 static Player* CreatePlayer(const char* nickname, const char* password);
 
 static Agent* CreateAgent(bool isPlayer);
-static void DestroyAgent(Agent* agent);
+static void DestroyAgent(void* agent);
 
 static Lot* CreateLot(bool isSell, size_t amount, size_t price);
 
@@ -31,12 +30,12 @@ Player* FindPlayerByNickname(const char* nickname)
 {
     assert(nickname);
 
-    Player* player = server->players;
-    while(player)
+    ListElem* player_elem = server->players->start;
+    while(player_elem)
     {
-        if(!strcmp(player->nickname, nickname)) return player;
+        if(!strcmp(((Player*)(player_elem->value))->nickname, nickname)) return (Player*)(player_elem->value);
 
-        player = player->next;
+        player_elem = player_elem->next;
     }
     
     return NULL;
@@ -79,7 +78,11 @@ Player* RegisterPlayer(const char* nickname, const char* password)
     player = FindPlayerByNickname(nickname);
     if(player) return NULL;
 
-    return CreatePlayer(nickname, password);
+    player = CreatePlayer(nickname, password);
+
+    ListAddElem(server->players, player);
+
+    return player;
 }
 
 
@@ -108,46 +111,33 @@ bool LogOutPlayer(ThreadInfo* thread)
 
 
 
-// Количество игроков
-static size_t PlayerCount()
-{
-    size_t i = 0;
-
-    Player* player = server->players;
-    while(player)
-    {
-        i++;
-        player = player->next;   
-    }
-
-    return i;
-}
-
-
-
-
-
-
 // Сохранить данные сервера
 bool Save()
 {
     FILE* file = fopen(FILENAME, "w+");
     if(!file) return false;
 
-    size_t player_count = PlayerCount();
+    size_t player_count = server->players->count;
 
     fprintf(file, "%lu ", player_count);
-    Player* player = server->players;
-    while(player)
+
+
+    ListElem* player_elem = server->players->start;
+    while(player_elem)
     {
+        Player* player = (Player*)player_elem->value;
         fprintf(file, "%s %s ", player->nickname, player->password);
-        player = player->next;
+
+        player_elem = player_elem->next;
     }
+
 
     fclose(file);
 
     printf("[DATA MANAGER] Data saved\n");
 
+
+    // TODO save money
     return 1;
 }
 
@@ -173,9 +163,13 @@ bool Load()
 
         Player* player = CreatePlayer(nickname, password);
         if(!player) return false;
+
+        ListAddElem(server->players, player);
     }
 
     printf("[DATA MANAGER] Data loaded\n");
+
+    // TODO load money
 
     return true;
 }
@@ -191,7 +185,9 @@ void CreateServer()
     Server* serv = (Server*)calloc(1, sizeof(Server));
     if(!serv) CoreShutdown();
 
-    serv->players = NULL;
+    serv->players = ListCreate();
+    serv->agents = ListCreate();
+    serv->lots = ListCreate();
 
     serv->old_lots_count = 0;
     
@@ -208,17 +204,7 @@ void CreateServer()
 // Уничтожить структуру сервера
 void DestroyServer()
 {
-    Player* player = server->players;
-
-    while(player)
-    {
-        Player* to_free = player;
-        player = player->next;
-
-        free(to_free->nickname);
-        free(to_free->password);
-        free(to_free);
-    }
+    ListDelete(server->players, DestroyPlayer);
     free(server);
     server = NULL;
 }
@@ -288,13 +274,6 @@ static Player* CreatePlayer(const char* nickname, const char* password)
     new_player->nickname = strdup(nickname);
     new_player->password = strdup(password);
 
-    new_player->next = server->players;
-    if(server->players)
-    {
-        server->players->prev = new_player;
-    }
-    server->players = new_player;
-
     return new_player;
 }
 
@@ -309,8 +288,8 @@ static Agent* CreateAgent(bool isPlayer)
     agent->isPlayer = isPlayer;
     agent->player = NULL;
     agent->bot = NULL;
-    agent->money = 0;
-    agent->stocks = 0;
+    agent->money = 1000;
+    agent->stocks = 10;
     agent->expected_money = 0;
     agent->want_buy_lots_count = 0;
     agent->want_buy_lots = (Lot**)calloc(1, sizeof(Lot*));
@@ -320,36 +299,16 @@ static Agent* CreateAgent(bool isPlayer)
         return NULL;
     }
 
-    agent->prev = NULL;
-    agent->next = server->agents;
-    if(server->agents)
-    {
-        server->agents->prev = agent;
-    }
-    server->agents = agent;
-
     return agent;
 }
 
 // Уничтожить структуру агента
-static void DestroyAgent(Agent* agent)
+static void DestroyAgent(void* agent_void)
 {
-    assert(agent);
+    assert(agent_void);
 
+    Agent* agent = (Agent*)agent_void;
     free(agent->want_buy_lots);
-
-    if(agent->prev)
-    {
-        agent->prev->next = agent->next;
-    }
-    if(agent->next)
-    {
-        agent->next->prev = agent->prev;
-    }
-    if(server->agents == agent)
-    {
-        server->agents = agent->next;
-    }
 
     free(agent);
 }
@@ -375,16 +334,6 @@ static Lot* CreateLot(bool isSell, size_t amount, size_t price)
     lot->price = 0;
     lot->owner = NULL;
 
-    lot->prev = NULL;
-    lot->next = server->lots;
-
-    if(server->lots)
-    {
-        server->lots->prev = lot;
-    }
-
-    server->lots = lot;
-
     lot->id = LOT_ID++;
 
     return lot;
@@ -394,44 +343,17 @@ static Lot* CreateLot(bool isSell, size_t amount, size_t price)
 
 
 // Уничтожение структура лота
-void DestroyLot(Lot* lot)
+void DestroyLot(void* lot_void)
 {
-    assert(lot);
+    assert(lot_void);
 
-    if(lot->prev)
-    {
-        lot->prev->next = lot->next;
-    }
-    if(lot->next)
-    {
-        lot->next->prev = lot->prev;
-    }
-    if(server->lots == lot)
-    {
-        server->lots =  lot->next;
-    }
+    Lot* lot = (Lot*)lot_void;
+
     free(lot->agents_want);
     free(lot);
 }
 
 
-
-
-
-// Подсчет количсетва лотов
-size_t LotCount()
-{
-    Lot* lot = server->lots;
-    size_t count = 0;
-
-    while(lot)
-    {
-        lot = lot->next;
-        count++;
-    }
-
-    return count;
-}
 
 
 
@@ -484,4 +406,17 @@ bool Sell(Agent* agent, size_t amount, size_t price)
     agent->want_sell_lot = new_lot;
 
     return true;
+}
+
+
+void DestroyPlayer(void* player_void)
+{
+    assert(player_void);
+
+    Player* player = (Player*)player_void;
+    free(player->nickname);
+    free(player->password);
+
+    DestroyAgent(player->agent);
+    free(player);
 }

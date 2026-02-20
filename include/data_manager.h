@@ -2,6 +2,7 @@
 #define DATA_MANAGER_H
 
 #include "net_server.h"
+#include "lib.h"
 
 struct Server;
 
@@ -26,14 +27,14 @@ struct Lot;
 // Структура для хранения данных о мире
 struct Server
 {
-    Player* players;
+    List* players;
 
-    Agent* agents;
+    List* agents;
 
     size_t old_lots_count;
     Lot** old_lots;
 
-    Lot* lots;
+    List* lots;
 };
 
 
@@ -48,9 +49,6 @@ struct Lot
     size_t price;
 
     Agent* owner;
-
-    Lot* next;
-    Lot* prev;
 
     size_t agents_want_count;
     Agent** agents_want;
@@ -80,9 +78,6 @@ struct Agent
     size_t want_buy_lots_count;
     Lot** want_buy_lots;
     Lot* want_sell_lot;
-
-    Agent* next;
-    Agent* prev;
 };
 
 // Структура для хранения информации о игроке
@@ -93,13 +88,10 @@ struct Player
 
     ThreadInfo* thread;
 
-    Player* next;
-    Player* prev;
-
     Agent* agent;
 };
 
-void DestroyLot(Lot* lot);
-size_t LotCount();
+void DestroyLot(void* lot_void);
+void DestroyPlayer(void* player_void);
 
 #endif // DATA_MANAGER_H

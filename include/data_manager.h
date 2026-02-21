@@ -22,6 +22,8 @@ bool Sell(Agent* agent, size_t amount, size_t price);
 bool Save();
 bool Load();
 
+const size_t PRICE_ARRAY_COUNT = 60;
+
 struct Lot;
 
 // Структура для хранения данных о мире
@@ -35,6 +37,9 @@ struct Server
     Lot** old_lots;
 
     List* lots;
+
+    double cycled_list[PRICE_ARRAY_COUNT];
+    size_t cycled_list_index;
 };
 
 
@@ -78,6 +83,7 @@ struct Agent
     size_t want_buy_lots_count;
     Lot** want_buy_lots;
     Lot* want_sell_lot;
+    Lot* selling_lot;
 };
 
 // Структура для хранения информации о игроке

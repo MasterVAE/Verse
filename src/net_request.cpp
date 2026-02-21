@@ -38,7 +38,7 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
 
     if(request_number >= 300)
     {
-        fprintf(stderr, "Error: %d\n", request_number);
+        fprintf(stderr, "[NET SERVER] Error: %d\n", request_number);
     }
 
     if(request_number >= 200) return;
@@ -130,8 +130,6 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             sscanf(buffer + 4, "%lu %lu", &amount, &price);
 
             if(!info->player) RESPONSE("305 Lot error\n");
-
-            fprintf(stderr, "%p %p\n", info, info->data);
 
             if(Sell(info->player->agent, amount, price)) RESPONSE("205 Lot accepted\n");
             RESPONSE("305 Lot error\n");

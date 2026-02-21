@@ -126,7 +126,8 @@ bool Save()
     while(player_elem)
     {
         Player* player = (Player*)player_elem->value;
-        fprintf(file, "%s %s ", player->nickname, player->password);
+        fprintf(file, "%s %s %lu %lu", player->nickname, player->password, 
+                                       player->agent->stocks, player->agent->money);
 
         player_elem = player_elem->next;
     }
@@ -136,8 +137,6 @@ bool Save()
 
     printf("[DATA MANAGER] Data saved\n");
 
-
-    // TODO save money
     return 1;
 }
 
@@ -164,12 +163,14 @@ bool Load()
         Player* player = CreatePlayer(nickname, password);
         if(!player) return false;
 
+        fscanf(file, "%lu %lu ", &player->agent->stocks, &player->agent->money);
+
         ListAddElem(server->players, player);
     }
 
-    printf("[DATA MANAGER] Data loaded\n");
+    fclose(file);
 
-    // TODO load money
+    printf("[DATA MANAGER] Data loaded\n");
 
     return true;
 }
@@ -190,8 +191,13 @@ void CreateServer()
     serv->lots = ListCreate();
 
     serv->old_lots_count = 0;
-    
 
+    for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
+    {
+        serv->cycled_list[i] = 0;
+    };
+    serv->cycled_list_index = 0;
+    
     server = serv;
 }
 
@@ -271,6 +277,8 @@ static Player* CreatePlayer(const char* nickname, const char* password)
         return NULL;
     }
 
+    ListAddElem(server->agents, new_player->agent);
+
     new_player->nickname = strdup(nickname);
     new_player->password = strdup(password);
 
@@ -298,7 +306,7 @@ static Agent* CreateAgent(bool isPlayer)
         free(agent);
         return NULL;
     }
-
+    agent->selling_lot = NULL;
     return agent;
 }
 
@@ -330,8 +338,9 @@ static Lot* CreateLot(bool isSell, size_t amount, size_t price)
 
     lot->agents_want_count = 0;
 
-    lot->amount = 0;
-    lot->price = 0;
+    lot->isSell = isSell;
+    lot->amount = amount;
+    lot->price = price;
     lot->owner = NULL;
 
     lot->id = LOT_ID++;
@@ -400,10 +409,18 @@ bool Sell(Agent* agent, size_t amount, size_t price)
     if(amount == 0) return false;
     if(amount > agent->stocks) return false;
     if(agent->want_sell_lot) return false;
+    if(agent->selling_lot)
+    {
+        if(amount > agent->stocks + agent->selling_lot->amount) return false;
+    }
 
     Lot* new_lot = CreateLot(true, amount, price);
     new_lot->owner = agent;
     agent->want_sell_lot = new_lot;
+
+    ListAddElem(server->lots, new_lot);
+
+    printf("[DATA MANAGER] Lot accepted\n");
 
     return true;
 }
@@ -417,6 +434,6 @@ void DestroyPlayer(void* player_void)
     free(player->nickname);
     free(player->password);
 
-    DestroyAgent(player->agent);
+    ListDeleteElem(server->agents, player->agent, DestroyAgent);
     free(player);
 }

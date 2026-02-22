@@ -83,7 +83,8 @@ struct Agent
     size_t want_buy_lots_count;
     Lot** want_buy_lots;
     Lot* want_sell_lot;
-    Lot* selling_lot;
+    
+    List* selling_lots;
 };
 
 // Структура для хранения информации о игроке

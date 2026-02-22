@@ -21,6 +21,8 @@ int CoreStartup()
 {
     printf("[CORE] Core starting up...\n");
 
+    CreateServer();
+
     WORKING = true;
 
     // Запуск сервера подключений в отдельном потоке

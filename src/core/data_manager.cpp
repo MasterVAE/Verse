@@ -6,7 +6,8 @@
 #include "data_manager.h"
 #include "core.h"
 
-const char* FILENAME = "server.data";
+const char* PLAYERS_FILENAME = "players.data";
+const char* BOTS_FILENAME = "bots.data";
 const char* POSSIBLE_SYMBOLS = "abcdefghijklmnopqrstuvwxyz"
                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "0123456789"
@@ -21,6 +22,12 @@ static Agent* CreateAgent(bool isPlayer);
 static void DestroyAgent(void* agent);
 
 static Lot* CreateLot(bool isSell, size_t amount, size_t price);
+
+static bool SavePlayers();
+static bool SaveBots();
+
+static bool LoadPlayers();
+static bool LoadBots();
 
 
 static size_t LOT_ID = 0;
@@ -114,30 +121,7 @@ bool LogOutPlayer(ThreadInfo* thread)
 // Сохранить данные сервера
 bool Save()
 {
-    FILE* file = fopen(FILENAME, "w+");
-    if(!file) return false;
-
-    size_t player_count = server->players->count;
-
-    fprintf(file, "%lu ", player_count);
-
-
-    ListElem* player_elem = server->players->start;
-    while(player_elem)
-    {
-        Player* player = (Player*)player_elem->value;
-        fprintf(file, "%s %s %lu %lu", player->nickname, player->password, 
-                                       player->agent->stocks, player->agent->money);
-
-        player_elem = player_elem->next;
-    }
-
-
-    fclose(file);
-
-    printf("[DATA MANAGER] Data saved\n");
-
-    return 1;
+    return SavePlayers() && SaveBots();
 }
 
 
@@ -148,31 +132,7 @@ bool Save()
 // Загрузить последнее сохранение сервера
 bool Load()
 {
-    FILE* file = fopen(FILENAME, "r+");
-    if(!file) return false;
-    
-    size_t player_count = 0;
-    fscanf(file, "%lu ", &player_count);
-    for(size_t i = 0; i < player_count; i++)
-    {
-        char nickname[100] = {0};
-        char password[100] = {0};
-
-        fscanf(file, "%99s %99s ", nickname, password);
-
-        Player* player = CreatePlayer(nickname, password);
-        if(!player) return false;
-
-        fscanf(file, "%lu %lu ", &player->agent->stocks, &player->agent->money);
-
-        ListAddElem(server->players, player);
-    }
-
-    fclose(file);
-
-    printf("[DATA MANAGER] Data loaded\n");
-
-    return true;
+    return LoadPlayers() && LoadBots();
 }
 
 
@@ -299,6 +259,7 @@ static Agent* CreateAgent(bool isPlayer)
     agent->money = 1000;
     agent->stocks = 10;
     agent->expected_money = 0;
+
     agent->want_buy_lots_count = 0;
     agent->want_buy_lots = (Lot**)calloc(1, sizeof(Lot*));
     if(!agent->want_buy_lots)
@@ -306,7 +267,15 @@ static Agent* CreateAgent(bool isPlayer)
         free(agent);
         return NULL;
     }
-    agent->selling_lot = NULL;
+
+    agent->selling_lots = ListCreate();
+    if(!agent->selling_lots)
+    {
+        free(agent->want_buy_lots);
+        free(agent);
+        return NULL;
+    }
+
     return agent;
 }
 
@@ -409,10 +378,16 @@ bool Sell(Agent* agent, size_t amount, size_t price)
     if(amount == 0) return false;
     if(amount > agent->stocks) return false;
     if(agent->want_sell_lot) return false;
-    if(agent->selling_lot)
+
+    size_t have_stocks = agent->stocks;
+    ListElem* elem = agent->selling_lots->start;
+    while(elem)
     {
-        if(amount > agent->stocks + agent->selling_lot->amount) return false;
-    }
+        have_stocks -= ((Lot*)elem->value)->amount;
+        elem = elem->next;
+    };
+
+    if(amount > have_stocks) return false;
 
     Lot* new_lot = CreateLot(true, amount, price);
     new_lot->owner = agent;
@@ -436,4 +411,75 @@ void DestroyPlayer(void* player_void)
 
     ListDeleteElem(server->agents, player->agent, DestroyAgent);
     free(player);
+}
+
+static bool SavePlayers()
+{
+    FILE* file = fopen(PLAYERS_FILENAME, "w+");
+    if(!file) return false;
+
+    size_t player_count = server->players->count;
+
+    fprintf(file, "%lu ", player_count);
+
+
+    ListElem* player_elem = server->players->start;
+    while(player_elem)
+    {
+        Player* player = (Player*)player_elem->value;
+        fprintf(file, "%s %s %lu %lu ", player->nickname, player->password, 
+                                       player->agent->stocks, player->agent->money);
+
+        player_elem = player_elem->next;
+    }
+
+
+    fclose(file);
+
+    printf("[DATA MANAGER] Data saved\n");
+
+    return true;
+}
+
+
+static bool SaveBots()
+{
+    // TODO
+    return true;
+}
+
+
+static bool LoadPlayers()
+{
+    FILE* file = fopen(PLAYERS_FILENAME, "r+");
+    if(!file) return false;
+    
+    size_t player_count = 0;
+    fscanf(file, "%lu ", &player_count);
+    for(size_t i = 0; i < player_count; i++)
+    {
+        char nickname[100] = {0};
+        char password[100] = {0};
+
+        fscanf(file, "%99s %99s ", nickname, password);
+
+        Player* player = CreatePlayer(nickname, password);
+        if(!player) return false;
+
+        fscanf(file, "%lu %lu ", &player->agent->stocks, &player->agent->money);
+
+        ListAddElem(server->players, player);
+    }
+
+    fclose(file);
+
+    printf("[DATA MANAGER] Data loaded\n");
+
+    return true;
+}
+
+static bool LoadBots()
+{
+    // TODO
+    return true;
 }

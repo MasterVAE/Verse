@@ -12,8 +12,12 @@
 #include "net_server.h"
 #include "data_manager.h"
 
-void SendGameData(ThreadInfo* info);
-void Tick();
+static void SendGameData(ThreadInfo* info, double seconds_till_next_tick);
+static void Tick();
+
+
+static const double UPDATED_PER_SECOND = 5;
+static const double TIME_FOR_TICK = 20;
 
 static bool WORKING = true;
 
@@ -40,7 +44,6 @@ void* GameServerStartup(void* data)
     WORKING = true;
     THREAD_INFO = GetThreads();
 
-    CreateServer();
     server = GetServer();
 
     printf("[GAME SERVER] Game server started up\n");
@@ -49,9 +52,9 @@ void* GameServerStartup(void* data)
 
     while(WORKING)
     {
-        usleep(200000);
+        usleep(1000000 / UPDATED_PER_SECOND);
         counter++;
-        if(counter >= 300)
+        if(counter >= TIME_FOR_TICK * UPDATED_PER_SECOND)
         {
             counter = 0;
             Tick();
@@ -62,7 +65,7 @@ void* GameServerStartup(void* data)
             ThreadInfo* info = THREAD_INFO + i;
             if(!info->in_use) continue;
 
-            SendGameData(info);
+            SendGameData(info, TIME_FOR_TICK - counter/UPDATED_PER_SECOND);
         }
     }
 
@@ -87,7 +90,7 @@ void GameServerShutdown()
 
 
 // Разослать по потокам данные о мире
-void SendGameData(ThreadInfo* info)
+static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
 {
     char buffer[10240] = {0};
     size_t shift = 0;
@@ -107,6 +110,9 @@ void SendGameData(ThreadInfo* info)
         sprintf(buffer + shift, "1 %s %lu %lu ", player->nickname, player->agent->stocks, player->agent->money);
         shift = strlen(buffer);
     }
+
+    sprintf(buffer + shift, "%lf ", seconds_till_next_tick);
+    shift = strlen(buffer);
 
     // Рассылка лотов
     sprintf(buffer + shift, "%lu ", server->old_lots_count);
@@ -141,30 +147,8 @@ void SendGameData(ThreadInfo* info)
 size_t ticks = 0;
 
 // Один игровой тик (каждые 60 секунд)
-void Tick()
+static void Tick()
 {
-    // Обновление таблицы цен
-    {
-        double price = 0;
-        if(server->old_lots_count > 0)
-        {
-            price = (float)server->old_lots[0]->price/(float)server->old_lots[0]->amount;
-        }
-        else
-        {
-            size_t index = server->cycled_list_index - 1;
-            if(server->cycled_list_index == 0) index = PRICE_ARRAY_COUNT - 1;
-
-            price = server->cycled_list[index];
-        }
-
-        size_t index = server->cycled_list_index + 1;
-        if(index >= PRICE_ARRAY_COUNT) index -= PRICE_ARRAY_COUNT;
-        server->cycled_list[server->cycled_list_index] = price;
-    }
-
-
-
     // Обработка покупки лотов
     for(size_t i = 0; i < server->old_lots_count; i++)
     {
@@ -180,24 +164,35 @@ void Tick()
             buyer->stocks += lot->amount;
             lot->owner->money += lot->price;
             lot->owner->stocks -= lot->amount;
+
+            ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
+
+
+            for(size_t j = i + 1; j < server->old_lots_count; j++)
+            {
+                server->old_lots[j - 1] = server->old_lots[j];
+            }
+
+            server->old_lots_count--;
+            i--;
         }
-        lot->owner->selling_lot = NULL;
-        DestroyLot(lot);
     }
     
 
     // Обработка новых лотов
     {
         size_t lot_count = server->lots->count;
-        server->old_lots_count = lot_count;
+        server->old_lots_count += lot_count;
 
-        server->old_lots = (Lot**)realloc(server->old_lots, lot_count * sizeof(Lot*));
+        server->old_lots = (Lot**)realloc(server->old_lots, server->old_lots_count * sizeof(Lot*));
 
         ListElem* elem = server->lots->start;
-        for(size_t i = 0; i < lot_count; i++, elem = elem->next)
+        for(size_t i = server->old_lots_count - lot_count; 
+            i < server->old_lots_count; 
+            i++, elem = elem->next)
         {
             server->old_lots[i] = (Lot*)elem->value;
-            server->old_lots[i]->owner->selling_lot = server->old_lots[i];
+            ListAddElem(server->old_lots[i]->owner->selling_lots, server->old_lots[i]);
         }
 
         ListDelete(server->lots, NULL);
@@ -223,6 +218,28 @@ void Tick()
             qsort(server->old_lots, server->old_lots_count, sizeof(Lot**), comparat);
         }
     }
+
+
+    // Обновление таблицы цен
+    {
+        double price = 0;
+        if(server->old_lots_count > 0)
+        {
+            price = (float)server->old_lots[0]->price/(float)server->old_lots[0]->amount;
+        }
+        else
+        {
+            price = server->cycled_list[server->cycled_list_index];
+        }
+
+        server->cycled_list_index++;
+        if(server->cycled_list_index >= PRICE_ARRAY_COUNT)
+        {
+            server->cycled_list_index -= PRICE_ARRAY_COUNT;
+        }
+        server->cycled_list[server->cycled_list_index] = price;
+    }
+
     
     // Выплата дивидентов (раз в день)
     {
@@ -241,6 +258,8 @@ void Tick()
                     elem = elem->next;
                 }
             }
+
+            printf("[GAME MANAGER] Dividents\n");
         }
     }
     Save();

@@ -24,6 +24,7 @@ bool Save();
 bool Load();
 
 const size_t PRICE_ARRAY_COUNT = 60;
+static const size_t START_BOTS_COUNT = 100;
 
 struct Lot;
 
@@ -31,6 +32,7 @@ struct Lot;
 struct Server
 {
     List* players;
+    List* bots;
 
     List* agents;
 
@@ -48,8 +50,6 @@ struct Server
 struct Lot
 {
     size_t id;
-
-    bool isSell;
 
     size_t amount;
     size_t price;
@@ -70,11 +70,6 @@ struct Bot
 // Структура агента на бирже
 struct Agent
 {
-    bool isPlayer;
-
-    Player* player;
-    Bot* bot;
-
     size_t money;
     size_t stocks;
 
@@ -100,5 +95,6 @@ struct Player
 
 void DestroyLot(void* lot_void);
 void DestroyPlayer(void* player_void);
+void DestroyBot(void* player_void);
 
 #endif // DATA_MANAGER_H

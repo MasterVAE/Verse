@@ -11,18 +11,19 @@
 #include "game_server.h"
 #include "net_server.h"
 #include "data_manager.h"
+#include "bot.h"
 
 static void SendGameData(ThreadInfo* info, double seconds_till_next_tick);
 static void Tick();
 
-
 static const double UPDATED_PER_SECOND = 5;
 static const double TIME_FOR_TICK = 20;
+
 
 static bool WORKING = true;
 
 static ThreadInfo* THREAD_INFO;
-Server* server;
+static Server* server;
 
 int comparat(const void* a, const void* b);
 int comparat(const void* a, const void* b)
@@ -150,6 +151,14 @@ size_t ticks = 0;
 static void Tick()
 {
     // Запуск ботов
+    {
+        ListElem* elem = server->bots->start;
+        while(elem)
+        {
+            BotThink((Bot*)elem->value);
+            elem = elem->next;
+        }
+    }
 
     // Обработка покупки лотов
     for(size_t i = 0; i < server->old_lots_count; i++)

@@ -26,7 +26,7 @@ struct Neuron
     size_t koeff_count;
     double* koeffs;
 
-    double sigmoid_ n k;
+    double sigmoid_k;
 };
 
 struct Network

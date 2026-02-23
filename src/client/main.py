@@ -1,6 +1,6 @@
 import socket
 
-def send_data_tcp(host='localhost', port=5432):
+def send_data_tcp(host='ru.tuna.am', port=32585):
     """
     Функция для отправки данных по TCP соединению
     """
@@ -35,4 +35,4 @@ def send_data_tcp(host='localhost', port=5432):
         print(f"Произошла ошибка: {e}")
 
 if __name__ == "__main__":
-    send_data_tcp('127.0.0.1', 5432)
+    send_data_tcp()

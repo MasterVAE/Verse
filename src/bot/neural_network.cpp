@@ -3,9 +3,6 @@
 
 void SetupNeuron(Neuron* neuron, NeuronFunc func, size_t koeff_count)
 {
-    Neuron* neuron = (Neuron*)calloc(1, sizeof(Neuron));
-    if(!neuron) return;
-
     neuron->koeff_count = koeff_count;
     neuron->koeffs = (double*)calloc(koeff_count, sizeof(double));
     if(!neuron->koeffs)
@@ -29,8 +26,8 @@ Network* CreateNetwork(NetworkType type)
         network->layers[i] = (Neuron*)calloc(neuron_count, sizeof(Neuron));
         for(size_t j = 0; j < neuron_count; j++)
         {
-            size_t koeff_count = i == 0 ? 0 : (type == NETWORK_BUY ? neuron_count_buy[i - 1] : neuron_count_sell[i - 1];)
-            SetupNeuron(network->layers[i][j], SIGMOID, koeff_count);
+            size_t koeff_count = i == 0 ? 0 : (type == NETWORK_BUY ? neuron_count_buy[i - 1] : neuron_count_sell[i - 1]);
+            SetupNeuron(&network->layers[i][j], SIGMOID, koeff_count);
         }
                                         
     }

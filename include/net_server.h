@@ -1,11 +1,12 @@
 #ifndef NET_SERVER_H
 #define NET_SERVER_H
 
+#include "stdlib.h"
 
 void* NetServerStartup(void* data);
 void NetServerShutdown();
 
-#define PORT 8080
+#define PORT 5432
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 100
 

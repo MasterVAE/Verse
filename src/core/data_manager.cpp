@@ -18,10 +18,11 @@ static Server* server;
 static bool CheckNicknameAndPassword(const char* nickname, const char* password);
 static Player* CreatePlayer(const char* nickname, const char* password);
 
-static Agent* CreateAgent(bool isPlayer);
+static Agent* CreateAgent();
 static void DestroyAgent(void* agent);
 
-static Lot* CreateLot(bool isSell, size_t amount, size_t price);
+static Lot* CreateLot(size_t amount, size_t price);
+static Bot* CreateBot();
 
 static bool SavePlayers();
 static bool SaveBots();
@@ -147,6 +148,7 @@ void CreateServer()
     if(!serv) CoreShutdown();
 
     serv->players = ListCreate();
+    serv->bots = ListCreate();
     serv->agents = ListCreate();
     serv->lots = ListCreate();
 
@@ -230,7 +232,7 @@ static Player* CreatePlayer(const char* nickname, const char* password)
     Player* new_player = (Player*)calloc(1, sizeof(Player));
     if(!new_player) return NULL;
 
-    new_player->agent = CreateAgent(true);
+    new_player->agent = CreateAgent();
     if(!new_player->agent)
     {
         free(new_player);
@@ -248,14 +250,11 @@ static Player* CreatePlayer(const char* nickname, const char* password)
 
 
 // Инициилизировать структуру агента
-static Agent* CreateAgent(bool isPlayer)
+static Agent* CreateAgent()
 {
     Agent* agent = (Agent*)calloc(1, sizeof(Agent));
     if(!agent) return NULL;
 
-    agent->isPlayer = isPlayer;
-    agent->player = NULL;
-    agent->bot = NULL;
     agent->money = 1000;
     agent->stocks = 10;
     agent->expected_money = 0;
@@ -293,7 +292,7 @@ static void DestroyAgent(void* agent_void)
 
 
 // Инициализация лота
-static Lot* CreateLot(bool isSell, size_t amount, size_t price)
+static Lot* CreateLot(size_t amount, size_t price)
 {
     Lot* lot = (Lot*)calloc(1, sizeof(Lot));
     if(!lot) return NULL;
@@ -307,7 +306,6 @@ static Lot* CreateLot(bool isSell, size_t amount, size_t price)
 
     lot->agents_want_count = 0;
 
-    lot->isSell = isSell;
     lot->amount = amount;
     lot->price = price;
     lot->owner = NULL;
@@ -389,7 +387,7 @@ bool Sell(Agent* agent, size_t amount, size_t price)
 
     if(amount > have_stocks) return false;
 
-    Lot* new_lot = CreateLot(true, amount, price);
+    Lot* new_lot = CreateLot(amount, price);
     new_lot->owner = agent;
     agent->want_sell_lot = new_lot;
 
@@ -400,7 +398,7 @@ bool Sell(Agent* agent, size_t amount, size_t price)
     return true;
 }
 
-
+// Уничтожение структуры игрока
 void DestroyPlayer(void* player_void)
 {
     assert(player_void);
@@ -413,6 +411,7 @@ void DestroyPlayer(void* player_void)
     free(player);
 }
 
+// Сохранение данных игроков на диск
 static bool SavePlayers()
 {
     FILE* file = fopen(PLAYERS_FILENAME, "w+");
@@ -441,14 +440,14 @@ static bool SavePlayers()
     return true;
 }
 
-
+// Сохрнение ботов на диск
 static bool SaveBots()
 {
     // TODO
     return true;
 }
 
-
+// Загрузка данных игроков с диска
 static bool LoadPlayers()
 {
     FILE* file = fopen(PLAYERS_FILENAME, "r+");
@@ -478,8 +477,40 @@ static bool LoadPlayers()
     return true;
 }
 
+// Загрузка ботов с диска
 static bool LoadBots()
 {
-    // TODO
+    for(size_t i = 0; i < START_BOTS_COUNT; i++)
+    {
+        ListAddElem(server->bots, CreateBot());
+    }
     return true;
+}
+
+
+static Bot* CreateBot()
+{
+    Bot* new_bot = (Bot*)calloc(1, sizeof(Bot));
+    if(!new_bot) return NULL;
+
+    new_bot->agent = CreateAgent();
+    if(!new_bot->agent)
+    {
+        free(new_bot);
+        return NULL;
+    }
+
+    ListAddElem(server->agents, new_bot->agent);
+
+    return new_bot;
+}
+
+// Удаление структуры бота
+void DestroyBot(void* bot_void)
+{
+    assert(bot_void);
+
+    Bot* bot = (Bot*)bot_void;
+    ListDeleteElem(server->agents, bot->agent, DestroyAgent);
+    free(bot);
 }

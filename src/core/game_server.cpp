@@ -167,7 +167,6 @@ static void Tick()
 
             ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
 
-
             for(size_t j = i + 1; j < server->old_lots_count; j++)
             {
                 server->old_lots[j - 1] = server->old_lots[j];
@@ -176,7 +175,12 @@ static void Tick()
             server->old_lots_count--;
             i--;
         }
+        else if(i >= 8)
+        {
+            ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
+        }
     }
+    if(server->old_lots_count > 8) server->old_lots_count = 8;
     
 
     // Обработка новых лотов

@@ -3,6 +3,7 @@
 
 #include "net_server.h"
 #include "lib.h"
+#include "neural_network.h"
 
 struct Server;
 
@@ -63,8 +64,7 @@ struct Lot
 struct Bot
 {
     Agent* agent;
-
-    // TODO
+    Network* network;
 };
 
 // Структура агента на бирже

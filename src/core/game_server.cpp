@@ -149,6 +149,8 @@ size_t ticks = 0;
 // Один игровой тик (каждые 60 секунд)
 static void Tick()
 {
+    // Запуск ботов
+
     // Обработка покупки лотов
     for(size_t i = 0; i < server->old_lots_count; i++)
     {

@@ -127,10 +127,14 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
     shift = strlen(buffer);
 
     // Рассылка лотов
-    sprintf(buffer + shift, "%lu ", server->old_lots_count);
+
+    size_t count = server->old_lots_count;
+    if(count > 8) count = 8;
+ 
+    sprintf(buffer + shift, "%lu ", count);
     shift = strlen(buffer);
 
-    for(size_t i = 0; i < server->old_lots_count; i++)
+    for(size_t i = 0; i < count; i++)
     {
         Lot* lot = server->old_lots[i];
 

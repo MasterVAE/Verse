@@ -123,7 +123,7 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
     {
         Lot* lot = server->old_lots[i];
 
-        sprintf(buffer + shift, "%lu %u %lu %lu ", lot->id, lot->owner == info->player->agent, lot->amount, lot->price);
+        sprintf(buffer + shift, "%lu %u %lu %lu ", lot->id, info->player ? lot->owner == info->player->agent : 0, lot->amount, lot->price);
         shift = strlen(buffer);
     }
 

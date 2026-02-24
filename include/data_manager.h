@@ -19,6 +19,7 @@ void DestroyServer();
 
 bool Buy(Agent* agent, size_t lot_number);
 bool Sell(Agent* agent, size_t amount, size_t price);
+bool Cancel(Agent* agent, size_t lot_id);
 
 bool Save();
 bool Load();
@@ -58,6 +59,8 @@ struct Lot
 
     size_t agents_want_count;
     Agent** agents_want;
+
+    bool canceled;
 };
 
 // Структура для хранения информации о боте

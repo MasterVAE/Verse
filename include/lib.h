@@ -23,4 +23,6 @@ void ListDelete(List* list, void (*destroyer)(void*));
 void ListAddElem(List* list, void* value);
 void ListDeleteElem(List* list, void* value, void (*destroyer)(void*));
 
+bool ListContainsElem(List* list, void* value);
+
 #endif // LIB_H

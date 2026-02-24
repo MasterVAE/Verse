@@ -31,7 +31,7 @@ static bool LoadPlayers();
 static bool LoadBots();
 
 
-static size_t LOT_ID = 0;
+static size_t LOT_ID = 1;
 
 // Поиск игрока по никнейму
 Player* FindPlayerByNickname(const char* nickname)
@@ -312,6 +312,8 @@ static Lot* CreateLot(size_t amount, size_t price)
 
     lot->id = LOT_ID++;
 
+    lot->canceled = false;
+
     return lot;
 }
 
@@ -349,6 +351,11 @@ bool Buy(Agent* agent, size_t lot_number)
     }
 
     if(!lot) return false;
+
+    for(size_t i = 0; i < lot->agents_want_count; i++)
+    {
+        if(lot->agents_want[i] == agent) return false;
+    }
 
     if(lot->price > agent->expected_money) return false;
 
@@ -396,6 +403,37 @@ bool Sell(Agent* agent, size_t amount, size_t price)
     printf("[DATA MANAGER] Lot accepted\n");
 
     return true;
+}
+
+
+// Отмена лота
+bool Cancel(Agent* agent, size_t lot_id)
+{
+    assert(agent);
+
+    if(lot_id == 0)
+    {
+        if(!agent->want_sell_lot) return false;
+        DestroyLot(agent->want_sell_lot);
+        agent->want_sell_lot = NULL;
+
+        return true;
+    }
+    
+    ListElem* elem = server->lots->start;
+    while(elem)
+    {
+        Lot* lot = (Lot*)elem->value;
+        if(lot->id == lot_id)
+        {
+            lot->canceled = true;
+            return true;
+        }
+        elem = elem->next;
+    }
+
+    return false;
+    // TODO
 }
 
 // Уничтожение структуры игрока

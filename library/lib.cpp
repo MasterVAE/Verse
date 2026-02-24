@@ -84,3 +84,20 @@ void ListDeleteElem(List* list, void* value, void (*destroyer)(void*))
     }
     list->count--;
 }
+
+bool ListContainsElem(List* list, void* value)
+{
+    assert(list);
+
+    ListElem* elem = list->start;
+    while(elem)
+    {
+        if(elem->value == value)
+        {
+            return true;
+        }
+        elem = elem->next;
+    }
+
+    return false;
+}

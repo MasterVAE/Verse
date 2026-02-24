@@ -123,7 +123,7 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
     {
         Lot* lot = server->old_lots[i];
 
-        sprintf(buffer + shift, "%lu %lu %lu ", lot->id, lot->amount, lot->price);
+        sprintf(buffer + shift, "%lu %u %lu %lu ", lot->id, lot->owner == info->player->agent, lot->amount, lot->price);
         shift = strlen(buffer);
     }
 
@@ -176,6 +176,18 @@ static void Tick()
             lot->owner->money += lot->price;
             lot->owner->stocks -= lot->amount;
 
+            ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
+
+            for(size_t j = i + 1; j < server->old_lots_count; j++)
+            {
+                server->old_lots[j - 1] = server->old_lots[j];
+            }
+
+            server->old_lots_count--;
+            i--;
+        }
+        else if(lot->canceled)
+        {
             ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
 
             for(size_t j = i + 1; j < server->old_lots_count; j++)

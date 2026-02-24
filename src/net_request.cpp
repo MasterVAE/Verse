@@ -100,10 +100,16 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             return;
         }
         case(PROTOCOL_CLIENT_SHUTDOWN):
-        {       
-            CoreShutdown();
+        { 
+            char pswd[100] = {0};
+            scanf(buffer + 4, "%s", pswd);
+            if(strcmp(pswd, "admin"))
+            {
+                CoreShutdown();
+                RESPONSE("207 Successful shutdown\n");
+            } 
+            RESPONSE("307 Shutdown error\n");     
 
-            RESPONSE("207 Successful shutdown\n");
 
             return;
         }
@@ -133,6 +139,16 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
 
             if(Sell(info->player->agent, amount, price)) RESPONSE("205 Lot accepted\n");
             RESPONSE("305 Lot error\n");
+        }
+        case(PROTOCOL_CLIENT_CANCEL):
+        {
+            // TODO
+            size_t lot_id = 0;
+            sscanf(buffer + 4, "%lu", &lot_id);
+            if(!info->player) RESPONSE("309 Cancel error\n");
+
+            if(Cancel(info->player->agent, lot_id)) RESPONSE("Success cancel\n");
+            RESPONSE("309 Cancel error\n");
         }
         default:
         {

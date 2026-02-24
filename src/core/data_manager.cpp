@@ -414,7 +414,7 @@ bool Cancel(Agent* agent, size_t lot_id)
     if(lot_id == 0)
     {
         if(!agent->want_sell_lot) return false;
-        DestroyLot(agent->want_sell_lot);
+        ListDeleteElem(server->lots, agent->want_sell_lot, DestroyLot);
         agent->want_sell_lot = NULL;
 
         return true;
@@ -433,7 +433,6 @@ bool Cancel(Agent* agent, size_t lot_id)
     }
 
     return false;
-    // TODO
 }
 
 // Уничтожение структуры игрока

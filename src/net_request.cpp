@@ -142,7 +142,6 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
         }
         case(PROTOCOL_CLIENT_CANCEL):
         {
-            // TODO
             size_t lot_id = 0;
             sscanf(buffer + 4, "%lu", &lot_id);
             if(!info->player) RESPONSE("309 Cancel error\n");

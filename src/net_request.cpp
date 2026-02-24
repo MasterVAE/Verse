@@ -146,7 +146,7 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             sscanf(buffer + 4, "%lu", &lot_id);
             if(!info->player) RESPONSE("309 Cancel error\n");
 
-            if(Cancel(info->player->agent, lot_id)) RESPONSE("Success cancel\n");
+            if(Cancel(info->player->agent, lot_id)) RESPONSE("209 Success cancel\n");
             RESPONSE("309 Cancel error\n");
         }
         default:

@@ -112,6 +112,17 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
         shift = strlen(buffer);
     }
 
+    if(player && player->agent->want_sell_lot)
+    {
+        sprintf(buffer + shift, "1 %lu %lu ", player->agent->want_sell_lot->amount, player->agent->want_sell_lot->price);
+        shift = strlen(buffer);
+    }
+    else
+    {
+        sprintf(buffer + shift, "0 ");
+        shift = strlen(buffer);
+    }
+
     sprintf(buffer + shift, "%lf ", seconds_till_next_tick);
     shift = strlen(buffer);
 

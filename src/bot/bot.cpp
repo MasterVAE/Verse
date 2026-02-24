@@ -23,8 +23,8 @@ void BotThink(Bot* bot)
         }
     }
 
-    int amount = rand() % 1000;
-    int price = rand() % 1000;    
+    int amount = rand() % (bot->agent->stocks + 1);
+    int price = rand() % 5000;    
     
     Sell(bot->agent, amount, price);
 }

@@ -400,7 +400,7 @@ bool Sell(Agent* agent, size_t amount, size_t price)
 
     ListAddElem(server->lots, new_lot);
 
-    printf("[DATA MANAGER] Lot accepted\n");
+    //printf("[DATA MANAGER] Lot accepted\n");
 
     return true;
 }
@@ -414,22 +414,21 @@ bool Cancel(Agent* agent, size_t lot_id)
     if(lot_id == 0)
     {
         if(!agent->want_sell_lot) return false;
+
         ListDeleteElem(server->lots, agent->want_sell_lot, DestroyLot);
         agent->want_sell_lot = NULL;
 
         return true;
     }
     
-    ListElem* elem = server->lots->start;
-    while(elem)
+    for(size_t i = 0; i < server->old_lots_count; i++)
     {
-        Lot* lot = (Lot*)elem->value;
+        Lot* lot = server->old_lots[i];
         if(lot->id == lot_id)
         {
             lot->canceled = true;
             return true;
         }
-        elem = elem->next;
     }
 
     return false;
@@ -472,7 +471,7 @@ static bool SavePlayers()
 
     fclose(file);
 
-    printf("[DATA MANAGER] Data saved\n");
+    //printf("[DATA MANAGER] Data saved\n");
 
     return true;
 }

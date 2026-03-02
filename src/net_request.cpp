@@ -13,6 +13,7 @@
 #include "core.h"
 #include "data_manager.h"
 #include "protocol.h"
+#include "game_server.h"
 
 static const char* SHUTDOWN_PASSWORD = "admin";
 
@@ -150,6 +151,29 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
 
             if(Cancel(info->player->agent, lot_id)) RESPONSE("209 Success cancel\n");
             RESPONSE("309 Cancel error\n");
+        }
+        case(PROTOCOL_CLIENT_BUY_PRIORITY):
+        {
+            size_t priority = 0;
+            sscanf(buffer + 4, "%lu", &priority);
+            if(!info->player) RESPONSE("310 Priority error\n");
+
+            if(BuyPriority(info->player->agent, priority)) RESPONSE("210 Success priprity\n");
+            RESPONSE("310 Priority error\n");
+        }
+        case(PROTOCOL_CLIENT_GET_PRICES):
+        {
+            size_t company = 0;
+            sscanf(buffer + 4, "%lu", &company);
+
+            SendPrices(info, company);
+        }
+        case(PROTOCOL_CLIENT_GET_LOTS):
+        {
+            size_t company = 0;
+            sscanf(buffer + 4, "%lu", &company);
+
+            SendLots(info, company);
         }
         default:
         {

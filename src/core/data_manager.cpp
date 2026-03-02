@@ -428,7 +428,11 @@ bool Sell(Agent* agent, size_t amount, size_t price, size_t company)
     ListElem* elem = agent->selling_lots->start;
     while(elem)
     {
-        have_stocks -= ((Lot*)elem->value)->amount;
+        Lot* lot = (Lot*)elem->value;
+        if(lot->company == company)
+        {
+            have_stocks -= ((Lot*)elem->value)->amount;
+        }
         elem = elem->next;
     };
 
@@ -440,7 +444,6 @@ bool Sell(Agent* agent, size_t amount, size_t price, size_t company)
     agent->want_sell_lot[company] = new_lot;
 
     ListAddElem(server->lots[company], new_lot);
-
 
     return true;
 }

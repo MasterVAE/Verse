@@ -28,11 +28,12 @@ void BotThink(Bot* bot)
 
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
-        int amount = rand() % ((int)bot->agent->stocks[i] + 1);
+        
+        int amount = rand() % (bot->agent->stocks[i] + 1);
         int price = rand() % 5000;    
         
         Sell(bot->agent, (size_t)amount, (size_t)price, i);
     }
 
-    BuyPriority(bot->agent, rand() % 100);
+    BuyPriority(bot->agent, rand() % (bot->agent->money + 1));
 }

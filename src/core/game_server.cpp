@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <time.h>
+#include <assert.h>
 
 #include "game_server.h"
 #include "net_server.h"
@@ -128,34 +129,6 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
 
     sprintf(buffer + shift, "%lf ", seconds_till_next_tick);
     shift = strlen(buffer);
-
-    // Рассылка лотов
-
-    // size_t count = server->old_lots_count;
-    // if(count > 8) count = 8;
- 
-    // sprintf(buffer + shift, "%lu ", count);
-    // shift = strlen(buffer);
-
-    // for(size_t i = 0; i < count; i++)
-    // {
-    //     Lot* lot = server->old_lots[i];
-
-    //     sprintf(buffer + shift, "%lu %d %lu %lu ", lot->id, info->player ? lot->owner == info->player->agent : 0, lot->amount, lot->price);
-    //     shift = strlen(buffer);
-    // }
-
-    // Рассылка 60 тиков
-    // sprintf(buffer + shift, "%lu ", PRICE_ARRAY_COUNT);
-    // shift = strlen(buffer);
-
-    // for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
-    // {
-    //     size_t j = server->cycled_list_index + i +1;
-    //     if(j >= PRICE_ARRAY_COUNT) j -= PRICE_ARRAY_COUNT;
-    //     sprintf(buffer + shift, "%lf ", server->cycled_list[j]);
-    //     shift = strlen(buffer);
-    // }
 
     sprintf(buffer + shift, "\n");
 
@@ -403,6 +376,56 @@ static void Tick()
     }
 
 
-
+    ticks++;
     Save();
+}
+
+
+// Рассылка цен
+void SendPrices(ThreadInfo* info, size_t company)
+{
+    assert(info);
+
+    char buffer[1000] = {0};
+
+    size_t shift = 0;
+    sprintf(buffer, "%lu ", PRICE_ARRAY_COUNT);
+    shift = strlen(buffer);
+
+    for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
+    {
+        size_t j = server->cycled_list_index[company] + i +1;
+        if(j >= PRICE_ARRAY_COUNT) j -= PRICE_ARRAY_COUNT;
+        sprintf(buffer + shift, "%lf ", server->cycled_list[j]);
+        shift = strlen(buffer);
+    }
+
+    send(info->data->client_socket, buffer, strlen(buffer), 0); 
+}
+
+
+// Рассылка лотов
+void SendLots(ThreadInfo* info, size_t company)
+{
+    assert(info);
+
+    char buffer[1000];
+
+    size_t count = server->old_lots_count[company];
+    if(count > 8) count = 8;
+ 
+    size_t shift = 0;
+
+    sprintf(buffer + shift, "%lu ", count);
+    shift = strlen(buffer);
+
+    for(size_t i = 0; i < count; i++)
+    {
+        Lot* lot = server->old_lots[company][i];
+
+        sprintf(buffer + shift, "%lu %d %lu %lu ", lot->id, info->player ? lot->owner == info->player->agent : 0, lot->amount, lot->price);
+        shift = strlen(buffer);
+    }
+
+    send(info->data->client_socket, buffer, strlen(buffer), 0); 
 }

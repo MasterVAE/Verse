@@ -16,7 +16,7 @@
 static void SendGameData(ThreadInfo* info, double seconds_till_next_tick);
 static void Tick();
 
-static const double UPDATED_PER_SECOND = 5;
+static const double UPDATES_PER_SECOND = 5;
 static const double TIME_FOR_TICK = 20;
 
 
@@ -53,9 +53,9 @@ void* GameServerStartup(void* data)
 
     while(WORKING)
     {
-        usleep(1000000 / UPDATED_PER_SECOND);
+        usleep(1000000 / UPDATES_PER_SECOND);
         counter++;
-        if(counter >= TIME_FOR_TICK * UPDATED_PER_SECOND)
+        if((double)counter >= TIME_FOR_TICK * UPDATES_PER_SECOND)
         {
             counter = 0;
             Tick();
@@ -66,7 +66,7 @@ void* GameServerStartup(void* data)
             ThreadInfo* info = THREAD_INFO + i;
             if(!info->in_use) continue;
 
-            SendGameData(info, TIME_FOR_TICK - counter/UPDATED_PER_SECOND);
+            SendGameData(info, TIME_FOR_TICK - (double)counter/UPDATES_PER_SECOND);
         }
     }
 
@@ -112,15 +112,18 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
         shift = strlen(buffer);
     }
 
-    if(player && player->agent->want_sell_lot)
+    for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
-        sprintf(buffer + shift, "1 %lu %lu ", player->agent->want_sell_lot->amount, player->agent->want_sell_lot->price);
-        shift = strlen(buffer);
-    }
-    else
-    {
-        sprintf(buffer + shift, "0 ");
-        shift = strlen(buffer);
+        if(player && player->agent->want_sell_lot[i])
+        {
+            sprintf(buffer + shift, "1 %lu %lu ", player->agent->want_sell_lot[i]->amount, player->agent->want_sell_lot[i]->price);
+            shift = strlen(buffer);
+        }
+        else
+        {
+            sprintf(buffer + shift, "0 ");
+            shift = strlen(buffer);
+        }
     }
 
     sprintf(buffer + shift, "%lf ", seconds_till_next_tick);
@@ -128,31 +131,31 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
 
     // Рассылка лотов
 
-    size_t count = server->old_lots_count;
-    if(count > 8) count = 8;
+    // size_t count = server->old_lots_count;
+    // if(count > 8) count = 8;
  
-    sprintf(buffer + shift, "%lu ", count);
-    shift = strlen(buffer);
+    // sprintf(buffer + shift, "%lu ", count);
+    // shift = strlen(buffer);
 
-    for(size_t i = 0; i < count; i++)
-    {
-        Lot* lot = server->old_lots[i];
+    // for(size_t i = 0; i < count; i++)
+    // {
+    //     Lot* lot = server->old_lots[i];
 
-        sprintf(buffer + shift, "%lu %u %lu %lu ", lot->id, info->player ? lot->owner == info->player->agent : 0, lot->amount, lot->price);
-        shift = strlen(buffer);
-    }
+    //     sprintf(buffer + shift, "%lu %d %lu %lu ", lot->id, info->player ? lot->owner == info->player->agent : 0, lot->amount, lot->price);
+    //     shift = strlen(buffer);
+    // }
 
     // Рассылка 60 тиков
-    sprintf(buffer + shift, "%lu ", PRICE_ARRAY_COUNT);
-    shift = strlen(buffer);
+    // sprintf(buffer + shift, "%lu ", PRICE_ARRAY_COUNT);
+    // shift = strlen(buffer);
 
-    for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
-    {
-        size_t j = server->cycled_list_index + i +1;
-        if(j >= PRICE_ARRAY_COUNT) j -= PRICE_ARRAY_COUNT;
-        sprintf(buffer + shift, "%lf ", server->cycled_list[j]);
-        shift = strlen(buffer);
-    }
+    // for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
+    // {
+    //     size_t j = server->cycled_list_index + i +1;
+    //     if(j >= PRICE_ARRAY_COUNT) j -= PRICE_ARRAY_COUNT;
+    //     sprintf(buffer + shift, "%lf ", server->cycled_list[j]);
+    //     shift = strlen(buffer);
+    // }
 
     sprintf(buffer + shift, "\n");
 
@@ -162,7 +165,7 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
 
 size_t ticks = 0;
 
-// Один игровой тик (каждые 60 секунд)
+// Один игровой тик (каждые 20 секунд)
 static void Tick()
 {
     // Запуск ботов
@@ -176,69 +179,109 @@ static void Tick()
     }
 
     // Обработка покупки лотов
-    for(size_t i = 0; i < server->old_lots_count; i++)
+    for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
-        Lot* lot = server->old_lots[i];
-        if(lot->agents_want_count > 0)
+        for(size_t i = 0; i < server->old_lots_count[k]; i++)
         {
-            int min = 0;
-            int max = (int)lot->agents_want_count - 1;
-            int winner = (rand() % (max - min + 1)) + min;
-
-            Agent* buyer = lot->agents_want[winner];
-            buyer->money -= lot->price;
-            buyer->stocks += lot->amount;
-            lot->owner->money += lot->price;
-            lot->owner->stocks -= lot->amount;
-
-            ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
-
-            for(size_t j = i + 1; j < server->old_lots_count; j++)
+            Lot* lot = server->old_lots[k][i];
+            if(lot->agents_want->count > 0)
             {
-                server->old_lots[j - 1] = server->old_lots[j];
+                size_t highest_priority = 0;
+                size_t priority_count = 0;
+
+                ListElem* elem = lot->agents_want->start;
+                while(elem)
+                {
+                    Agent* agent = (Agent*)elem->value;
+                    size_t priority = agent->priority;
+                    if(priority == highest_priority) priority_count++;
+                    else if(priority > highest_priority)
+                    {
+                        highest_priority = priority;
+                        priority_count = 1;
+                    }
+                    elem = elem->next;
+                }
+
+                size_t winner = rand() % priority_count;
+                Agent* buyer = NULL;
+                size_t count = 0;
+
+                elem = lot->agents_want->start;
+                while(elem)
+                {
+                    Agent* agent = (Agent*)elem->value;
+                    size_t priority = agent->priority;
+                    if(priority == highest_priority) 
+                    {
+                        if(count == winner)
+                        {
+                            buyer = agent;
+                            break;
+                        }
+                        count++;
+                    }
+
+                    elem = elem->next;
+                }
+
+                buyer->money -= lot->price;
+                buyer->stocks[lot->company] += lot->amount;
+                lot->owner->money += lot->price;
+                lot->owner->stocks[lot->company] -= lot->amount;
+
+                ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
+
+                for(size_t j = i + 1; j < server->old_lots_count[k]; j++)
+                {
+                    server->old_lots[k][j - 1] = server->old_lots[k][j];
+                }
+
+                server->old_lots_count[k]--;
+                i--;
             }
-
-            server->old_lots_count--;
-            i--;
-        }
-        else if(lot->canceled)
-        {
-            ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
-
-            for(size_t j = i + 1; j < server->old_lots_count; j++)
+            else if(lot->canceled)
             {
-                server->old_lots[j - 1] = server->old_lots[j];
-            }
+                ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
 
-            server->old_lots_count--;
-            i--;
+                for(size_t j = i + 1; j < server->old_lots_count[k]; j++)
+                {
+                    server->old_lots[k][j - 1] = server->old_lots[k][j];
+                }
+
+                server->old_lots_count[k]--;
+                i--;
+            }
+            else if(i >= 8)
+            {
+                ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
+            }
         }
-        else if(i >= 8)
-        {
-            ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
-        }
+        if(server->old_lots_count[k] > 8) server->old_lots_count[k] = 8;
     }
-    if(server->old_lots_count > 8) server->old_lots_count = 8;
     
 
     // Обработка новых лотов
     {
-        size_t lot_count = server->lots->count;
-        server->old_lots_count += lot_count;
-
-        server->old_lots = (Lot**)realloc(server->old_lots, server->old_lots_count * sizeof(Lot*));
-
-        ListElem* elem = server->lots->start;
-        for(size_t i = server->old_lots_count - lot_count; 
-            i < server->old_lots_count; 
-            i++, elem = elem->next)
+        for(size_t k = 0; k < COMPANIES_COUNT; k++)
         {
-            server->old_lots[i] = (Lot*)elem->value;
-            ListAddElem(server->old_lots[i]->owner->selling_lots, server->old_lots[i]);
-        }
+            size_t lot_count = server->lots[k]->count;
+            server->old_lots_count[k] += lot_count;
 
-        ListDelete(server->lots, NULL);
-        server->lots = ListCreate();
+            server->old_lots[k] = (Lot**)realloc(server->old_lots[k], server->old_lots_count[k] * sizeof(Lot*));
+
+            ListElem* elem = server->lots[k]->start;
+            for(size_t i = server->old_lots_count[k] - lot_count; 
+                i < server->old_lots_count[k]; 
+                i++, elem = elem->next)
+            {
+                server->old_lots[k][i] = (Lot*)elem->value;
+                ListAddElem(server->old_lots[k][i]->owner->selling_lots, server->old_lots[k][i]);
+            }
+
+            ListDelete(server->lots[k], NULL);
+            server->lots[k] = ListCreate();
+        }
     }
 
     {
@@ -248,40 +291,79 @@ static void Tick()
             {
                 Agent* agent = (Agent*)elem->value;
 
-                agent->want_sell_lot = NULL;
+                for(size_t i = 0; i < COMPANIES_COUNT; i++)
+                {
+                    agent->want_sell_lot[i] = NULL;
+                }
                 agent->expected_money = agent->money;
 
                 elem = elem->next;
             }
         }
 
-        if(server->old_lots_count > 0)
+        for(size_t i = 0; i < COMPANIES_COUNT; i++)
         {
-            qsort(server->old_lots, server->old_lots_count, sizeof(Lot**), comparat);
+            if(server->old_lots_count[i] > 0)
+            {
+                qsort(server->old_lots[i], server->old_lots_count[i], sizeof(Lot**), comparat);
+            }
         }
     }
 
 
     // Обновление таблицы цен
     {
-        double price = 0;
-        if(server->old_lots_count > 0)
+        for(size_t k = 0; k < COMPANIES_COUNT; k++)
         {
-            price = (float)server->old_lots[0]->price/(float)server->old_lots[0]->amount;
-        }
-        else
-        {
-            price = server->cycled_list[server->cycled_list_index];
-        }
+            double price = 0;
+            if(server->old_lots_count[k] > 0)
+            {
+                price = (float)server->old_lots[k][0]->price/(float)server->old_lots[k][0]->amount;
+            }
+            else
+            {
+                price = server->cycled_list[k][server->cycled_list_index[k]];
+            }
 
-        server->cycled_list_index++;
-        if(server->cycled_list_index >= PRICE_ARRAY_COUNT)
-        {
-            server->cycled_list_index -= PRICE_ARRAY_COUNT;
+            server->cycled_list_index[k]++;
+            if(server->cycled_list_index[k] >= PRICE_ARRAY_COUNT)
+            {
+                server->cycled_list_index[k] -= PRICE_ARRAY_COUNT;
+            }
+            server->cycled_list[k][server->cycled_list_index[k]] = price;
         }
-        server->cycled_list[server->cycled_list_index] = price;
     }
 
+    // Снижение приоритета
+    {
+        ListElem* elem = server->agents->start;
+        while(elem)
+        {
+            Agent* agent = (Agent*)elem->value;
+            agent->priority /= 2;
+            
+            elem = elem->next;
+        }
+
+    }
+
+    // Выдача государтвенных лотов
+    {
+        Agent* agent = server->goverment_agent;
+
+        for(size_t i = 0; i < COMPANIES_COUNT; i++)
+        {
+            if(agent->stocks[i] >= 10)
+            {
+                // TODO constant
+                Sell(agent, 10, 1000, i);
+            }
+            else if(agent->stocks[i] > 0)
+            {
+                Sell(agent, agent->stocks[i], 100 * agent->stocks[i], i);
+            }
+        }
+    }
     
     // Выплата дивидентов (раз в день)
     {
@@ -295,8 +377,12 @@ static void Tick()
                 {
                     Agent* agent = (Agent*)elem->value;
 
-                    agent->money += agent->stocks;
-
+                    for(size_t i = 0; i < COMPANIES_COUNT; i++)
+                    {
+                        // TODO разные дивиденды
+                        agent->money += agent->stocks[i] * (i + 1);
+                    }
+                
                     elem = elem->next;
                 }
             }
@@ -304,5 +390,19 @@ static void Tick()
             printf("[GAME MANAGER] Dividents\n");
         }
     }
+
+    // Рассылка запроса тика
+    
+    for(size_t i = 0; i < MAX_CLIENTS; i++)
+    {
+        ThreadInfo* info = THREAD_INFO + i;
+        if(!info->in_use) continue;
+        
+        char buffer[] = "013 Tick";
+        send(info->data->client_socket, buffer, strlen(buffer), 0); 
+    }
+
+
+
     Save();
 }

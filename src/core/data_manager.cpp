@@ -8,10 +8,12 @@
 
 const char* PLAYERS_FILENAME = "players.data";
 const char* BOTS_FILENAME = "bots.data";
+const char* WORLD_FILENAME = "world.data";
 const char* POSSIBLE_SYMBOLS = "abcdefghijklmnopqrstuvwxyz"
                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "0123456789"
                                "_!@#$%^&*()-+=";
+
 
 static Server* server;
 
@@ -24,14 +26,16 @@ static void DestroyAgent(void* agent);
 static Lot* CreateLot(size_t amount, size_t price);
 static Bot* CreateBot();
 
-static bool SavePlayers();
-static bool SaveBots();
+static void SavePlayers();
+static void SaveBots();
+static void SaveWorld();
 
-static bool LoadPlayers();
-static bool LoadBots();
+static void LoadPlayers();
+static void LoadBots();
+static void LoadWorld();
 
 
-static size_t LOT_ID = 1;
+static size_t LOT_ID = 10;
 
 // Поиск игрока по никнейму
 Player* FindPlayerByNickname(const char* nickname)
@@ -120,9 +124,11 @@ bool LogOutPlayer(ThreadInfo* thread)
 
 
 // Сохранить данные сервера
-bool Save()
+void Save()
 {
-    return SavePlayers() && SaveBots();
+    SavePlayers(); 
+    SaveBots();
+    SaveWorld();
 }
 
 
@@ -131,9 +137,13 @@ bool Save()
 
 
 // Загрузить последнее сохранение сервера
-bool Load()
+void Load()
 {
-    return LoadPlayers() && LoadBots();
+    LoadPlayers();
+    LoadBots();
+    LoadWorld();
+
+    printf("[DATA MANAGER] Data loaded\n");
 }
 
 
@@ -150,15 +160,29 @@ void CreateServer()
     serv->players = ListCreate();
     serv->bots = ListCreate();
     serv->agents = ListCreate();
-    serv->lots = ListCreate();
-
-    serv->old_lots_count = 0;
-
-    for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
+    for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
-        serv->cycled_list[i] = 0;
-    };
-    serv->cycled_list_index = 0;
+        serv->lots[i] = ListCreate();
+    }
+
+    for(size_t i = 0; i < COMPANIES_COUNT; i++)
+    {
+        serv->old_lots_count[i] = 0;
+    }
+    
+
+    for(size_t j = 0; j < COMPANIES_COUNT; j++)
+    {
+        for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)
+        {
+            serv->cycled_list[j][i] = 0;
+        };
+        serv->cycled_list_index[j] = 0;
+    }   
+    
+
+    serv->goverment_agent = CreateAgent();
+    ListAddElem(serv->agents, serv->goverment_agent);
     
     server = serv;
 }
@@ -255,12 +279,15 @@ static Agent* CreateAgent()
     Agent* agent = (Agent*)calloc(1, sizeof(Agent));
     if(!agent) return NULL;
 
-    agent->money = 1000;
-    agent->stocks = 10;
+    agent->money = 10000;
+    for(size_t i = 0; i < COMPANIES_COUNT; i++)
+    {
+        agent->stocks[i] = 0;
+    }
+    
     agent->expected_money = 0;
 
-    agent->want_buy_lots_count = 0;
-    agent->want_buy_lots = (Lot**)calloc(1, sizeof(Lot*));
+    agent->want_buy_lots = ListCreate();
     if(!agent->want_buy_lots)
     {
         free(agent);
@@ -275,8 +302,14 @@ static Agent* CreateAgent()
         return NULL;
     }
 
+    agent->priority = 0;
+
     return agent;
 }
+
+
+
+
 
 // Уничтожить структуру агента
 static void DestroyAgent(void* agent_void)
@@ -284,10 +317,17 @@ static void DestroyAgent(void* agent_void)
     assert(agent_void);
 
     Agent* agent = (Agent*)agent_void;
-    free(agent->want_buy_lots);
 
+    for(size_t i = 0; i < COMPANIES_COUNT; i++)
+    {
+        server->goverment_agent->stocks[i] += agent->stocks[i];
+    }
+    
+    free(agent->want_buy_lots);
     free(agent);
 }
+
+
 
 
 
@@ -297,14 +337,13 @@ static Lot* CreateLot(size_t amount, size_t price)
     Lot* lot = (Lot*)calloc(1, sizeof(Lot));
     if(!lot) return NULL;
 
-    lot->agents_want = (Agent**)calloc(1, sizeof(Agent*));
+    lot->agents_want = ListCreate();
     if(!lot->agents_want)
     {
         free(lot);
         return NULL;
     }
 
-    lot->agents_want_count = 0;
 
     lot->amount = amount;
     lot->price = price;
@@ -342,33 +381,33 @@ bool Buy(Agent* agent, size_t lot_number)
     assert(agent);
 
     Lot* lot = NULL;
-    for(size_t i = 0; i < server->old_lots_count; i++)
+    for(size_t j = 0; j < COMPANIES_COUNT; j++)
     {
-        if(server->old_lots[i]->id == lot_number)
+        for(size_t i = 0; i < server->old_lots_count[j]; i++)
         {
-            lot = server->old_lots[i];
+            if(server->old_lots[j][i]->id == lot_number)
+            {
+                lot = server->old_lots[j][i];
+            }
         }
     }
 
     if(!lot) return false;
 
-    for(size_t i = 0; i < lot->agents_want_count; i++)
+    ListElem* elem = lot->agents_want->start;
+    while(elem)
     {
-        if(lot->agents_want[i] == agent) return false;
+        if(elem->value == agent) return false;
+        elem = elem->next;
     }
 
     if(lot->price > agent->expected_money) return false;
 
     agent->expected_money -= lot->price;
 
-    agent->want_buy_lots_count++;
-    agent->want_buy_lots = (Lot**)realloc(agent->want_buy_lots, 
-                                          sizeof(Lot*) * agent->want_buy_lots_count);
-    agent->want_buy_lots[agent->want_buy_lots_count - 1] = lot;
+    ListAddElem(agent->want_buy_lots, lot);
 
-    lot->agents_want_count++;
-    lot->agents_want = (Agent**)realloc(lot->agents_want, lot->agents_want_count * sizeof(Agent*));
-    lot->agents_want[lot->agents_want_count - 1] = agent;
+    ListAddElem(lot->agents_want, agent);
 
     return true;
 }
@@ -377,14 +416,15 @@ bool Buy(Agent* agent, size_t lot_number)
 
 
 // Выставить на продажу
-bool Sell(Agent* agent, size_t amount, size_t price)
+bool Sell(Agent* agent, size_t amount, size_t price, size_t company)
 {
     assert(agent);
+    if(company >= COMPANIES_COUNT) return false;
     if(amount == 0) return false;
-    if(amount > agent->stocks) return false;
-    if(agent->want_sell_lot) return false;
+    if(amount > agent->stocks[company]) return false;
+    if(agent->want_sell_lot[company]) return false;
 
-    size_t have_stocks = agent->stocks;
+    size_t have_stocks = agent->stocks[company];
     ListElem* elem = agent->selling_lots->start;
     while(elem)
     {
@@ -395,12 +435,12 @@ bool Sell(Agent* agent, size_t amount, size_t price)
     if(amount > have_stocks) return false;
 
     Lot* new_lot = CreateLot(amount, price);
+    new_lot->company = company;
     new_lot->owner = agent;
-    agent->want_sell_lot = new_lot;
+    agent->want_sell_lot[company] = new_lot;
 
-    ListAddElem(server->lots, new_lot);
+    ListAddElem(server->lots[company], new_lot);
 
-    //printf("[DATA MANAGER] Lot accepted\n");
 
     return true;
 }
@@ -411,27 +451,52 @@ bool Cancel(Agent* agent, size_t lot_id)
 {
     assert(agent);
 
-    if(lot_id == 0)
+    if(lot_id < COMPANIES_COUNT)
     {
-        if(!agent->want_sell_lot) return false;
+        if(!agent->want_sell_lot[lot_id]) return false;
 
-        ListDeleteElem(server->lots, agent->want_sell_lot, DestroyLot);
-        agent->want_sell_lot = NULL;
+        ListDeleteElem(server->lots[lot_id], agent->want_sell_lot[lot_id], DestroyLot);
+        agent->want_sell_lot[lot_id] = NULL;
 
         return true;
     }
     
-    for(size_t i = 0; i < server->old_lots_count; i++)
+    for(size_t j = 0; j < COMPANIES_COUNT; j++)
     {
-        Lot* lot = server->old_lots[i];
-        if(lot->id == lot_id)
+        for(size_t i = 0; i < server->old_lots_count[j]; i++)
         {
-            lot->canceled = true;
-            return true;
+            Lot* lot = server->old_lots[j][i];
+            if(lot->id == lot_id)
+            {
+                if(lot->owner == agent)
+                {
+                    lot->canceled = true;
+                    return true;
+                }
+                else
+                {
+                    ListDeleteElem(lot->agents_want, agent, NULL);
+                    ListDeleteElem(agent->want_buy_lots, lot, NULL);
+                }
+            }
         }
     }
 
     return false;
+}
+
+
+// Покупка приотритета
+bool BuyPriority(Agent* agent, size_t priority)
+{
+    assert(agent);
+
+    if(priority > agent->money) return false;
+    
+    agent->priority += priority;
+    agent->money -= priority;
+
+    return true;
 }
 
 // Уничтожение структуры игрока
@@ -448,10 +513,10 @@ void DestroyPlayer(void* player_void)
 }
 
 // Сохранение данных игроков на диск
-static bool SavePlayers()
+static void SavePlayers()
 {
     FILE* file = fopen(PLAYERS_FILENAME, "w+");
-    if(!file) return false;
+    if(!file) return;
 
     size_t player_count = server->players->count;
 
@@ -462,8 +527,12 @@ static bool SavePlayers()
     while(player_elem)
     {
         Player* player = (Player*)player_elem->value;
-        fprintf(file, "%s %s %lu %lu ", player->nickname, player->password, 
-                                       player->agent->stocks, player->agent->money);
+        fprintf(file, "%s %s %lu ", player->nickname, player->password, 
+                                       player->agent->money);
+        for(size_t i = 0; i < COMPANIES_COUNT; i++)
+        {
+            fprintf(file, "%lu ", player->agent->stocks[i]);
+        }
 
         player_elem = player_elem->next;
     }
@@ -471,23 +540,53 @@ static bool SavePlayers()
 
     fclose(file);
 
-    //printf("[DATA MANAGER] Data saved\n");
 
-    return true;
+    return;
 }
 
 // Сохрнение ботов на диск
-static bool SaveBots()
+static void SaveBots()
 {
-    // TODO
-    return true;
+    FILE* file = fopen(BOTS_FILENAME, "w+");
+    if(!file) return;
+
+    fprintf(file, "%lu ", server->bots->count);
+
+    ListElem* elem = server->bots->start;
+    while(elem)
+    {
+        Bot* bot = (Bot*)elem->value;
+        fprintf(file, "%lu ", bot->agent->money);
+        for(size_t i = 0; i < COMPANIES_COUNT; i++)
+        {
+            fprintf(file, "%lu ", bot->agent->stocks[i]);
+        }
+        elem = elem->next;
+    }
+
+    fclose(file);
+}
+
+
+// Сохрнение мира на диск
+static void SaveWorld()
+{
+    FILE* file = fopen(WORLD_FILENAME, "w+");
+    if(!file) return;
+
+    for(size_t k = 0; k < COMPANIES_COUNT; k++)
+    {
+        fprintf(file, "%lu ", server->goverment_agent->stocks[k]);
+    }
+
+    fclose(file);
 }
 
 // Загрузка данных игроков с диска
-static bool LoadPlayers()
+static void LoadPlayers()
 {
     FILE* file = fopen(PLAYERS_FILENAME, "r+");
-    if(!file) return false;
+    if(!file) return;
     
     size_t player_count = 0;
     fscanf(file, "%lu ", &player_count);
@@ -499,28 +598,71 @@ static bool LoadPlayers()
         fscanf(file, "%99s %99s ", nickname, password);
 
         Player* player = CreatePlayer(nickname, password);
-        if(!player) return false;
+        if(!player) return;
 
-        fscanf(file, "%lu %lu ", &player->agent->stocks, &player->agent->money);
+        fscanf(file, "%lu ", &player->agent->money);
+
+        for(size_t j = 0; j < COMPANIES_COUNT; j++)
+        {
+            fscanf(file, "%lu ", &player->agent->stocks[j]);
+        }
 
         ListAddElem(server->players, player);
     }
 
     fclose(file);
-
-    printf("[DATA MANAGER] Data loaded\n");
-
-    return true;
 }
 
 // Загрузка ботов с диска
-static bool LoadBots()
+static void LoadBots()
 {
+    FILE* file = fopen(BOTS_FILENAME, "r+");
+    if(file)
+    {
+        size_t bot_count = 0;
+        fscanf(file, "%lu ", &bot_count);
+
+        for(size_t i = 0; i < bot_count; i++)
+        {
+            Bot* bot = CreateBot();
+            fscanf(file, "%lu ", &bot->agent->money);
+            for(size_t j = 0; j < COMPANIES_COUNT; j++)
+            {
+                fscanf(file, "%lu ", &bot->agent->stocks[j]);
+            }
+            ListAddElem(server->bots, bot);
+        }
+
+        fclose(file);
+        return;
+    }
+
     for(size_t i = 0; i < START_BOTS_COUNT; i++)
     {
         ListAddElem(server->bots, CreateBot());
     }
-    return true;
+}
+
+
+// Загрузка мира с диска
+static void LoadWorld()
+{
+    FILE* file = fopen(WORLD_FILENAME, "r+");
+    if(file)
+    {
+        for(size_t i = 0; i < COMPANIES_COUNT; i++)
+        {
+            fscanf(file, "%lu ", &server->goverment_agent->stocks[i]);
+        }
+
+        fclose(file);
+        return;
+    }
+
+    for(size_t i = 0; i < COMPANIES_COUNT; i++)
+    {   
+        server->goverment_agent->stocks[i] = 10000;
+    }
 }
 
 
@@ -540,6 +682,8 @@ static Bot* CreateBot()
 
     return new_bot;
 }
+
+
 
 // Удаление структуры бота
 void DestroyBot(void* bot_void)

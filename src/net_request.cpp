@@ -14,6 +14,7 @@
 #include "data_manager.h"
 #include "protocol.h"
 
+static const char* SHUTDOWN_PASSWORD = "admin";
 
 #define RESPONSE(response)                                                                         \
 {                                                                                                  \
@@ -102,8 +103,8 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
         case(PROTOCOL_CLIENT_SHUTDOWN):
         { 
             char pswd[100] = {0};
-            scanf(buffer + 4, "%s", pswd);
-            if(strcmp(pswd, "admin"))
+            sscanf(buffer + 4, "%s", pswd);
+            if(strcmp(pswd, SHUTDOWN_PASSWORD))
             {
                 CoreShutdown();
                 RESPONSE("207 Successful shutdown\n");
@@ -132,12 +133,13 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
         {
             size_t amount = 0;
             size_t price = 0;
+            size_t company = 0;
 
-            sscanf(buffer + 4, "%lu %lu", &amount, &price);
+            sscanf(buffer + 4, "%lu %lu %lu ", &amount, &price, &company);
 
             if(!info->player) RESPONSE("305 Lot error\n");
 
-            if(Sell(info->player->agent, amount, price)) RESPONSE("205 Lot accepted\n");
+            if(Sell(info->player->agent, amount, price, company)) RESPONSE("205 Lot accepted\n");
             RESPONSE("305 Lot error\n");
         }
         case(PROTOCOL_CLIENT_CANCEL):

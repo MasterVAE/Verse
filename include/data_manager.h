@@ -3,7 +3,6 @@
 
 #include "net_server.h"
 #include "lib.h"
-#include "neural_network.h"
 
 struct Server;
 
@@ -18,14 +17,16 @@ void CreateServer();
 void DestroyServer();
 
 bool Buy(Agent* agent, size_t lot_number);
-bool Sell(Agent* agent, size_t amount, size_t price);
+bool Sell(Agent* agent, size_t amount, size_t price, size_t company);
 bool Cancel(Agent* agent, size_t lot_id);
+bool BuyPriority(Agent* agent, size_t priority);
 
-bool Save();
-bool Load();
+void Save();
+void Load();
 
 const size_t PRICE_ARRAY_COUNT = 60;
 static const size_t START_BOTS_COUNT = 100;
+const size_t COMPANIES_COUNT = 5;
 
 struct Lot;
 
@@ -37,13 +38,15 @@ struct Server
 
     List* agents;
 
-    size_t old_lots_count;
-    Lot** old_lots;
+    size_t old_lots_count[COMPANIES_COUNT];
+    Lot** old_lots[COMPANIES_COUNT];
 
-    List* lots;
+    List* lots[COMPANIES_COUNT];
 
-    double cycled_list[PRICE_ARRAY_COUNT];
-    size_t cycled_list_index;
+    double cycled_list[COMPANIES_COUNT][PRICE_ARRAY_COUNT];
+    size_t cycled_list_index[COMPANIES_COUNT];
+
+    Agent* goverment_agent;
 };
 
 
@@ -51,14 +54,14 @@ struct Server
 struct Lot
 {
     size_t id;
+    size_t company;
 
     size_t amount;
     size_t price;
 
     Agent* owner;
 
-    size_t agents_want_count;
-    Agent** agents_want;
+    List* agents_want;
 
     bool canceled;
 };
@@ -67,21 +70,21 @@ struct Lot
 struct Bot
 {
     Agent* agent;
-    Network* network;
 };
 
 // Структура агента на бирже
 struct Agent
 {
     size_t money;
-    size_t stocks;
+    size_t stocks[COMPANIES_COUNT];
 
     size_t expected_money;
 
-    size_t want_buy_lots_count;
-    Lot** want_buy_lots;
-    Lot* want_sell_lot;
+    List* want_buy_lots;
+    Lot* want_sell_lot[COMPANIES_COUNT];
     
+    size_t priority;
+
     List* selling_lots;
 };
 

@@ -483,6 +483,8 @@ bool Cancel(Agent* agent, size_t lot_id)
                     ListDeleteElem(agent->want_buy_lots, lot, NULL);
 
                     agent->expected_money += lot->price;
+
+                    return true;
                 }
             }
         }

@@ -395,7 +395,9 @@ void SendPrices(ThreadInfo* info, size_t company)
 
     char buffer[1000] = {0};
 
-    size_t shift = 0;
+    sprintf(buffer, "211 ");
+    size_t shift = strlen(buffer);
+
     sprintf(buffer, "%lu ", PRICE_ARRAY_COUNT);
     shift = strlen(buffer);
 
@@ -421,7 +423,8 @@ void SendLots(ThreadInfo* info, size_t company)
     size_t count = server->old_lots_count[company];
     if(count > 8) count = 8;
  
-    size_t shift = 0;
+    sprintf(buffer, "212 ");
+    size_t shift = strlen(buffer);
 
     sprintf(buffer + shift, "%lu ", count);
     shift = strlen(buffer);

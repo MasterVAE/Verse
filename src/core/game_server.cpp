@@ -61,13 +61,15 @@ void* GameServerStartup(void* data)
             counter = 0;
             Tick();
         }
-
-        for(size_t i = 0; i < MAX_CLIENTS; i++)
+        else
         {
-            ThreadInfo* info = THREAD_INFO + i;
-            if(!info->in_use) continue;
+            for(size_t i = 0; i < MAX_CLIENTS; i++)
+            {
+                ThreadInfo* info = THREAD_INFO + i;
+                if(!info->in_use) continue;
 
-            SendGameData(info, TIME_FOR_TICK - (double)counter/UPDATES_PER_SECOND);
+                SendGameData(info, TIME_FOR_TICK - (double)counter/UPDATES_PER_SECOND);
+            }
         }
     }
 

@@ -499,6 +499,10 @@ bool BuyPriority(Agent* agent, size_t priority)
 {
     assert(agent);
 
+    // FIXME
+    priority = 0;
+    // смешная обертка для даунов
+
     if(priority > agent->expected_money) return false;
     
     agent->priority += priority;

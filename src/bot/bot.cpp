@@ -35,5 +35,5 @@ void BotThink(Bot* bot)
         Sell(bot->agent, (size_t)amount, (size_t)price, i);
     }
 
-    BuyPriority(bot->agent, rand() % (bot->agent->money + 1));
+    //BuyPriority(bot->agent, rand() % (bot->agent->money + 1));
 }

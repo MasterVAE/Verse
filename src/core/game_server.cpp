@@ -398,7 +398,7 @@ void SendPrices(ThreadInfo* info, size_t company)
     sprintf(buffer, "211 ");
     size_t shift = strlen(buffer);
 
-    sprintf(buffer, "%lu ", PRICE_ARRAY_COUNT);
+    sprintf(buffer + shift, "%lu ", PRICE_ARRAY_COUNT);
     shift = strlen(buffer);
 
     for(size_t i = 0; i < PRICE_ARRAY_COUNT; i++)

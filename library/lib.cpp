@@ -76,7 +76,7 @@ void ListDeleteElem(List* list, void* value, void (*destroyer)(void*))
             if(elem->next)  elem->next->prev = elem->prev;
             if(elem->prev)  elem->prev->next = elem->next;
             if(elem == list->start) list->start = elem->next;
-            destroyer(elem->value);
+            if(destroyer)   destroyer(elem->value);
             free(elem);
             break;
         }

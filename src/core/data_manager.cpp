@@ -479,6 +479,8 @@ bool Cancel(Agent* agent, size_t lot_id)
                 }
                 else
                 {
+                    fprintf(stderr, "%p\n", lot);
+                    fprintf(stderr, "%p\n", lot->agents_want);
                     ListDeleteElem(lot->agents_want, agent, NULL);
                     ListDeleteElem(agent->want_buy_lots, lot, NULL);
 

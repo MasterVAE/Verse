@@ -167,6 +167,7 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             sscanf(buffer + 4, "%lu", &company);
 
             SendPrices(info, company);
+            return;
         }
         case(PROTOCOL_CLIENT_GET_LOTS):
         {
@@ -174,6 +175,7 @@ void ParseRequest(ThreadInfo* info, const char* buffer)
             sscanf(buffer + 4, "%lu", &company);
 
             SendLots(info, company);
+            return;
         }
         default:
         {

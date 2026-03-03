@@ -18,7 +18,7 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick);
 static void Tick();
 
 static const double UPDATES_PER_SECOND = 5;
-static const double TIME_FOR_TICK = 20;
+static const double TIME_FOR_TICK = 20; // 20
 
 
 static bool WORKING = true;
@@ -109,9 +109,16 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
     }
     else
     {
-        sprintf(buffer + shift, "1 %s %lu %lu ", player->nickname, player->agent->stocks, player->agent->money);
+        sprintf(buffer + shift, "1 %s %lu %lu ", player->nickname, player->agent->money, player->agent->priority);
         shift = strlen(buffer);
+
+        for(size_t i = 0; i < COMPANIES_COUNT; i++)
+        {   
+            sprintf(buffer + shift, "%lu ", player->agent->stocks[i]);
+            shift = strlen(buffer);
+        }
     }
+
 
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
@@ -340,7 +347,7 @@ static void Tick()
     
     // Выплата дивидентов (раз в день)
     {
-        if(ticks >= 24 * 60)
+        if(ticks >= 24 * 60 * 60 / TIME_FOR_TICK)
         {
             ticks = 0;
 
@@ -396,7 +403,7 @@ void SendPrices(ThreadInfo* info, size_t company)
     {
         size_t j = server->cycled_list_index[company] + i +1;
         if(j >= PRICE_ARRAY_COUNT) j -= PRICE_ARRAY_COUNT;
-        sprintf(buffer + shift, "%lf ", server->cycled_list[j]);
+        sprintf(buffer + shift, "%lf ", server->cycled_list[company][j]);
         shift = strlen(buffer);
     }
 
@@ -423,7 +430,13 @@ void SendLots(ThreadInfo* info, size_t company)
     {
         Lot* lot = server->old_lots[company][i];
 
-        sprintf(buffer + shift, "%lu %d %lu %lu ", lot->id, info->player ? lot->owner == info->player->agent : 0, lot->amount, lot->price);
+        int is_gov = lot->owner == server->goverment_agent ? 1 : 0;
+
+        int status = 0;
+        if(info->player && lot->owner == info->player->agent) status = 1;
+        if(info->player && ListContainsElem(lot->agents_want, info->player->agent)) status = 2;
+
+        sprintf(buffer + shift, "%lu %d %d %lu %lu ", lot->id, is_gov, status, lot->amount, lot->price);
         shift = strlen(buffer);
     }
 

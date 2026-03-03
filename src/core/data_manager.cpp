@@ -419,6 +419,7 @@ bool Buy(Agent* agent, size_t lot_number)
 bool Sell(Agent* agent, size_t amount, size_t price, size_t company)
 {
     assert(agent);
+
     if(company >= COMPANIES_COUNT) return false;
     if(amount == 0) return false;
     if(amount > agent->stocks[company]) return false;
@@ -480,6 +481,8 @@ bool Cancel(Agent* agent, size_t lot_id)
                 {
                     ListDeleteElem(lot->agents_want, agent, NULL);
                     ListDeleteElem(agent->want_buy_lots, lot, NULL);
+
+                    agent->expected_money += lot->price;
                 }
             }
         }
@@ -494,10 +497,12 @@ bool BuyPriority(Agent* agent, size_t priority)
 {
     assert(agent);
 
-    if(priority > agent->money) return false;
+    if(priority > agent->expected_money) return false;
     
     agent->priority += priority;
+    
     agent->money -= priority;
+    agent->expected_money -= priority;
 
     return true;
 }
@@ -531,7 +536,7 @@ static void SavePlayers()
     {
         Player* player = (Player*)player_elem->value;
         fprintf(file, "%s %s %lu ", player->nickname, player->password, 
-                                       player->agent->money);
+                                    player->agent->money);
         for(size_t i = 0; i < COMPANIES_COUNT; i++)
         {
             fprintf(file, "%lu ", player->agent->stocks[i]);
@@ -564,6 +569,7 @@ static void SaveBots()
         {
             fprintf(file, "%lu ", bot->agent->stocks[i]);
         }
+        fprintf(file, "\n");
         elem = elem->next;
     }
 

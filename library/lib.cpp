@@ -1,4 +1,6 @@
 #include "lib.h"
+
+#include <math.h>
 #include <assert.h>
 
 
@@ -100,4 +102,13 @@ bool ListContainsElem(List* list, void* value)
     }
 
     return false;
+}
+
+double Sigmoid(double k, double x)
+{
+    double value = 2;
+    value /= 1 + exp(-k * x);
+    value -= 1;
+
+    return value;
 }

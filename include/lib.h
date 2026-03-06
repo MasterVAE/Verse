@@ -25,4 +25,7 @@ void ListDeleteElem(List* list, void* value, void (*destroyer)(void*));
 
 bool ListContainsElem(List* list, void* value);
 
+
+double Sigmoid(double k, double x);
+
 #endif // LIB_H

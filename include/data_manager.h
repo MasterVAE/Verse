@@ -2,6 +2,7 @@
 #define DATA_MANAGER_H
 
 #include "net_server.h"
+#include "neural_network.h"
 #include "lib.h"
 
 struct Server;
@@ -21,7 +22,7 @@ bool Sell(Agent* agent, size_t amount, size_t price, size_t company);
 bool Cancel(Agent* agent, size_t lot_id);
 bool BuyPriority(Agent* agent, size_t priority);
 
-void Save();
+void* Save(void* arg);
 void Load();
 
 const size_t PRICE_ARRAY_COUNT = 60;
@@ -69,6 +70,10 @@ struct Lot
 // Структура для хранения информации о боте
 struct Bot
 {
+    Network* buy_net;
+    Network* sell_net;
+    Network* priority_net;
+    
     Agent* agent;
 };
 

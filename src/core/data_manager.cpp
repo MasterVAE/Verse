@@ -5,6 +5,7 @@
 
 #include "data_manager.h"
 #include "core.h"
+#include "neural_network.h"
 
 const char* PLAYERS_FILENAME = "players.data";
 const char* BOTS_FILENAME = "bots.data";
@@ -124,11 +125,13 @@ bool LogOutPlayer(ThreadInfo* thread)
 
 
 // Сохранить данные сервера
-void Save()
+void* Save(void* arg)
 {
     SavePlayers(); 
     SaveBots();
     SaveWorld();
+
+    return NULL;
 }
 
 
@@ -570,11 +573,78 @@ static void SaveBots()
     while(elem)
     {
         Bot* bot = (Bot*)elem->value;
+        // Save money & stocks
         fprintf(file, "%lu ", bot->agent->money);
         for(size_t i = 0; i < COMPANIES_COUNT; i++)
         {
             fprintf(file, "%lu ", bot->agent->stocks[i]);
         }
+
+
+        // Save buy net
+        Network* net = bot->buy_net;
+        size_t koefs_count = 0;
+
+        for(size_t i = 1; i < net->layer_count; i++)
+        {
+            koefs_count += net->layers[i - 1] * net->layers[i];
+        }
+
+        for(size_t i = 0; i < koefs_count; i++)
+        {
+            fprintf(file, "%lf ", net->koefs[i]);
+        }
+
+        for(size_t i = 0; i < net->layer_count; i++)
+        {
+            for(size_t j = 0; j < net->layers[i]; j++)
+            {
+                fprintf(file, "%lf ", net->neurons[i][j].k);
+            }
+        }
+
+        // Save sell net
+        net = bot->sell_net;
+        koefs_count = 0;
+        for(size_t i = 1; i < net->layer_count; i++)
+        {
+            koefs_count += net->layers[i - 1] * net->layers[i];
+        }
+
+        for(size_t i = 0; i < koefs_count; i++)
+        {
+            fprintf(file, "%lf ", net->koefs[i]);
+        }
+
+        for(size_t i = 0; i < net->layer_count; i++)
+        {
+            for(size_t j = 0; j < net->layers[i]; j++)
+            {
+                fprintf(file, "%lf ", net->neurons[i][j].k);
+            }
+        }
+
+        // Save priority net
+        net = bot->priority_net;
+        koefs_count = 0;
+        for(size_t i = 1; i < net->layer_count; i++)
+        {
+            koefs_count += net->layers[i - 1] * net->layers[i];
+        }
+
+        for(size_t i = 0; i < koefs_count; i++)
+        {
+            fprintf(file, "%lf ", net->koefs[i]);
+        }
+
+        for(size_t i = 0; i < net->layer_count; i++)
+        {
+            for(size_t j = 0; j < net->layers[i]; j++)
+            {
+                fprintf(file, "%lf ", net->neurons[i][j].k);
+            }
+        }
+        
         fprintf(file, "\n");
         elem = elem->next;
     }
@@ -632,30 +702,101 @@ static void LoadPlayers()
 static void LoadBots()
 {
     FILE* file = fopen(BOTS_FILENAME, "r+");
-    if(file)
+    if(!file)
     {
-        size_t bot_count = 0;
-        fscanf(file, "%lu ", &bot_count);
-
-        for(size_t i = 0; i < bot_count; i++)
+        for(size_t i = 0; i < START_BOTS_COUNT; i++)
         {
             Bot* bot = CreateBot();
-            fscanf(file, "%lu ", &bot->agent->money);
-            for(size_t j = 0; j < COMPANIES_COUNT; j++)
-            {
-                fscanf(file, "%lu ", &bot->agent->stocks[j]);
-            }
+            RandomNetwork(bot->buy_net);
+            RandomNetwork(bot->sell_net);
+            RandomNetwork(bot->priority_net);
+
             ListAddElem(server->bots, bot);
         }
-
-        fclose(file);
         return;
     }
+    size_t bot_count = 0;
+    fscanf(file, "%lu ", &bot_count);
 
-    for(size_t i = 0; i < START_BOTS_COUNT; i++)
+    for(size_t l = 0; l < bot_count; l++)
     {
-        ListAddElem(server->bots, CreateBot());
+        Bot* bot = CreateBot();
+        fscanf(file, "%lu ", &bot->agent->money);
+        for(size_t j = 0; j < COMPANIES_COUNT; j++)
+        {
+            fscanf(file, "%lu ", &bot->agent->stocks[j]);
+        }
+
+        // Load buy net
+        Network* net = bot->buy_net;
+        size_t koefs_count = 0;
+
+        for(size_t i = 1; i < net->layer_count; i++)
+        {
+            koefs_count += net->layers[i - 1] * net->layers[i];
+        }
+
+        for(size_t i = 0; i < koefs_count; i++)
+        {
+            fscanf(file, "%lf ", &net->koefs[i]);
+        }
+
+        for(size_t i = 0; i < net->layer_count; i++)
+        {
+            for(size_t j = 0; j < net->layers[i]; j++)
+            {
+                fscanf(file, "%lf ", &net->neurons[i][j].k);
+            }
+        }
+
+        // Load sell net
+        net = bot->sell_net;
+        koefs_count = 0;
+        for(size_t i = 1; i < net->layer_count; i++)
+        {
+            koefs_count += net->layers[i - 1] * net->layers[i];
+        }
+
+        for(size_t i = 0; i < koefs_count; i++)
+        {
+            fscanf(file, "%lf ", &net->koefs[i]);
+        }
+
+        for(size_t i = 0; i < net->layer_count; i++)
+        {
+            for(size_t j = 0; j < net->layers[i]; j++)
+            {
+                fscanf(file, "%lf ", &net->neurons[i][j].k);
+            }
+        }
+
+        // Load priority net
+        net = bot->priority_net;
+        koefs_count = 0;
+        for(size_t i = 1; i < net->layer_count; i++)
+        {
+            koefs_count += net->layers[i - 1] * net->layers[i];
+        }
+
+        for(size_t i = 0; i < koefs_count; i++)
+        {
+            fscanf(file, "%lf ", &net->koefs[i]);
+        }
+
+        for(size_t i = 0; i < net->layer_count; i++)
+        {
+            for(size_t j = 0; j < net->layers[i]; j++)
+            {
+                fscanf(file, "%lf ", &net->neurons[i][j].k);
+            }
+        }
+
+        ListAddElem(server->bots, bot);
+
+
     }
+
+    fclose(file);
 }
 
 
@@ -692,6 +833,11 @@ static Bot* CreateBot()
         free(new_bot);
         return NULL;
     }
+
+    new_bot->buy_net = CreateBuyNetwork();
+    new_bot->sell_net = CreateSellNetwork();
+    new_bot->priority_net = CreatePriorityNetwork();
+
 
     ListAddElem(server->agents, new_bot->agent);
 

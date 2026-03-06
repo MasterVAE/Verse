@@ -18,8 +18,16 @@ void BotThink(Bot* bot)
     {
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
         {
-            int buy = rand() % 2;
-            if(buy)
+            Network* net = bot->buy_net;
+            for(size_t l = 0; l < net->layers[0]; l++)
+            {
+                net->neurons[0][l].value = 1;
+            }
+
+            // TODO input values
+
+            RunNetwork(bot->buy_net);
+            if(bot->buy_net->neurons[bot->buy_net->layer_count - 1][0].value > 0.5)
             {
                 Buy(bot->agent, server->old_lots[k][i]->id);
             }
@@ -28,12 +36,34 @@ void BotThink(Bot* bot)
 
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
+        Network* net = bot->sell_net;
+        for(size_t l = 0; l < net->layers[0]; l++)
+        {
+            net->neurons[0][l].value = 1;
+        }
+        // TODO input values
+
+
+
+        RunNetwork(net);
+        if(net->neurons[net->layer_count - 1][0].value > 0.5)
+        {
+            Sell(bot->agent, 
+                (size_t)(net->neurons[net->layer_count - 1][1].value * bot->agent->stocks[i]), 
+                (size_t)(1 / (1 - net->neurons[net->layer_count - 1][2].value)), 
+                i);
+        }
         
-        int amount = rand() % (bot->agent->stocks[i] + 1);
-        int price = rand() % 5000;    
-        
-        Sell(bot->agent, (size_t)amount, (size_t)price, i);
     }
 
-    //BuyPriority(bot->agent, rand() % (bot->agent->money + 1));
+    Network* net = bot->priority_net;
+
+    RunNetwork(net);
+
+
+    if(net->neurons[net->layer_count - 1][0].value > 0.5)
+    {
+        BuyPriority(bot->agent, 
+                    (size_t)(net->neurons[net->layer_count - 1][1].value * bot->agent->money));
+    }
 }

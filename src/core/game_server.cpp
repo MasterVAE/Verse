@@ -212,6 +212,8 @@ static void Tick()
                 lot->owner->money += lot->price;
                 lot->owner->stocks[lot->company] -= lot->amount;
 
+                printf("Transaction \n");
+
                 ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
 
                 for(size_t j = i + 1; j < server->old_lots_count[k]; j++)
@@ -386,7 +388,14 @@ static void Tick()
 
 
     ticks++;
-    Save();
+
+    pthread_t save_thread;
+
+    if (pthread_create(&save_thread, NULL, Save, NULL) != 0) 
+    {
+        fprintf(stderr, "Save failed\n");
+    }
+    pthread_detach(save_thread);
 }
 
 

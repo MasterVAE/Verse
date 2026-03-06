@@ -17,6 +17,8 @@ Server* GetServer();
 void CreateServer();
 void DestroyServer();
 
+Bot* CreateBot();
+
 bool Buy(Agent* agent, size_t lot_number);
 bool Sell(Agent* agent, size_t amount, size_t price, size_t company);
 bool Cancel(Agent* agent, size_t lot_id);

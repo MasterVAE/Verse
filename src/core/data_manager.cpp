@@ -25,7 +25,7 @@ static Agent* CreateAgent();
 static void DestroyAgent(void* agent);
 
 static Lot* CreateLot(size_t amount, size_t price);
-static Bot* CreateBot();
+Bot* CreateBot();
 
 static void SavePlayers();
 static void SaveBots();
@@ -822,7 +822,7 @@ static void LoadWorld()
 }
 
 
-static Bot* CreateBot()
+Bot* CreateBot()
 {
     Bot* new_bot = (Bot*)calloc(1, sizeof(Bot));
     if(!new_bot) return NULL;

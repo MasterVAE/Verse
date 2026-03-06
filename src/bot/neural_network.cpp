@@ -50,7 +50,7 @@ void DestroyNetwork(Network* net)
 Network* CreateBuyNetwork()
 {
     size_t layer_count = 8;
-    size_t layers[8] = {60, 80, 100, 120, 120, 100, 60, 1};
+    size_t layers[8] = {67, 80, 100, 120, 120, 100, 60, 1};
 
     return CreateNetwork(layer_count, layers);
 }
@@ -58,7 +58,7 @@ Network* CreateBuyNetwork()
 Network* CreateSellNetwork()
 {
     size_t layer_count = 8;
-    size_t layers[8] = {60, 80, 100, 120, 120, 100, 60, 3};
+    size_t layers[8] = {66, 80, 100, 120, 120, 100, 60, 3};
 
     return CreateNetwork(layer_count, layers);
 }
@@ -161,8 +161,22 @@ void EvolveNetwork(Network* net)
     int rnd = rand() % 10;
     if(rnd == 0)
     {
+        int layer = rand() % net->layer_count;
+        int neur = rand() % net->layers[layer];
 
+        net->neurons[layer][neur].k += ((double)((rand()%20000) - 10000))/100000;
+        if(net->neurons[layer][neur].k < 0) net->neurons[layer][neur].k = 0;
+
+        return;
     }
 
-    // TODO
+    size_t koefs_count = 0;
+    for(size_t i = 1; i < net->layer_count; i++)
+    {
+        koefs_count += net->layers[i - 1] * net->layers[i];
+    }
+
+    int koef = rand() % koefs_count;
+    net->koefs[koef] += ((double)((rand()%20000) - 10000))/100000;
+    if(net->koefs[koef] < 0) net->koefs[koef] = 0;
 }

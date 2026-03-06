@@ -17,7 +17,7 @@
 static void SendGameData(ThreadInfo* info, double seconds_till_next_tick);
 static void Tick();
 
-static const double UPDATES_PER_SECOND = 5;
+static const double UPDATES_PER_SECOND = 5; // 5
 static const double TIME_FOR_TICK = 20; // 20
 
 
@@ -150,16 +150,6 @@ size_t ticks = 0;
 // Один игровой тик (каждые 20 секунд)
 static void Tick()
 {
-    // Запуск ботов
-    {
-        ListElem* elem = server->bots->start;
-        while(elem)
-        {
-            BotThink((Bot*)elem->value);
-            elem = elem->next;
-        }
-    }
-
     // Обработка покупки лотов
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
@@ -211,8 +201,6 @@ static void Tick()
                 buyer->stocks[lot->company] += lot->amount;
                 lot->owner->money += lot->price;
                 lot->owner->stocks[lot->company] -= lot->amount;
-
-                printf("Transaction \n");
 
                 ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
 
@@ -387,15 +375,69 @@ static void Tick()
     }
 
 
-    ticks++;
 
+
+    // Удаление мертвых ботов
+    {
+        ListElem* elem = server->bots->start;
+        while(elem)
+        {
+            ListElem* next = elem->next;
+            Bot* bot = (Bot*)elem->value;
+            if(bot->agent->money < 100)
+            {
+                ListDeleteElem(server->bots, bot, DestroyBot);
+            }
+            elem = next;
+        }
+    }
+
+    // Клонирование успешных ботов
+    {
+        ListElem* elem = server->bots->start;
+        while(elem)
+        {
+            Bot* bot = (Bot*)elem->value;
+            if(bot->agent->money > 10000)
+            {
+                Bot* new_bot = CreateBot();
+                DestroyNetwork(new_bot->buy_net);
+                new_bot->buy_net = CopyNetwork(bot->buy_net);
+                EvolveNetwork(new_bot->buy_net);
+                DestroyNetwork(new_bot->sell_net);
+                new_bot->sell_net = CopyNetwork(bot->sell_net);
+                EvolveNetwork(new_bot->sell_net);
+                DestroyNetwork(new_bot->priority_net);
+                new_bot->priority_net = CopyNetwork(bot->priority_net);
+                EvolveNetwork(new_bot->priority_net);
+
+
+                ListAddElem(server->bots, new_bot);
+            }
+            elem = elem->next;
+        }
+    }
+
+
+    // Запуск ботов
+    pthread_t bots_thread;
+    if (pthread_create(&bots_thread, NULL, BotsThink, NULL) != 0) 
+    {
+        fprintf(stderr, "Bots failed\n");
+    }
+    pthread_detach(bots_thread);
+
+    
+
+    // Сохранение
     pthread_t save_thread;
-
     if (pthread_create(&save_thread, NULL, Save, NULL) != 0) 
     {
         fprintf(stderr, "Save failed\n");
     }
     pthread_detach(save_thread);
+
+    ticks++;
 }
 
 

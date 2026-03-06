@@ -4,27 +4,52 @@
 #include "bot.h"
 #include "data_manager.h"
 
+static void BotThink(Bot* bot);
+
 
 static Server* server = NULL;
 
+void* BotsThink(void* args)
+{
+    if(!server) server = GetServer();
+
+    ListElem* elem = server->bots->start;
+    while(elem)
+    {
+        BotThink((Bot*)elem->value);
+        elem = elem->next;
+    }
+
+    return NULL;
+}
+
+
 // Работа бота
-void BotThink(Bot* bot)
+static void BotThink(Bot* bot)
 {
     assert(bot);
-
-    if(!server) server = GetServer();
 
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
         {
+            Lot* lot = server->old_lots[k][i];
+
             Network* net = bot->buy_net;
-            for(size_t l = 0; l < net->layers[0]; l++)
+
+            net->neurons[0][0].value = 1;
+            net->neurons[0][1].value = 0;
+            net->neurons[0][2].value = Sigmoid(net->neurons[0][2].k, bot->agent->expected_money);
+            net->neurons[0][3].value = Sigmoid(net->neurons[0][3].k, bot->agent->stocks[k]);
+            net->neurons[0][4].value = Sigmoid(net->neurons[0][4].k, bot->agent->priority);
+            net->neurons[0][5].value = Sigmoid(net->neurons[0][5].k, ((double)lot->price)/lot->amount);
+            for(size_t l = 0; l < 60; l++)
             {
-                net->neurons[0][l].value = 1;
+                size_t index = (server->cycled_list_index[k] + l) % 60;
+
+                net->neurons[0][6 + l].value = server->cycled_list[k][index];
             }
 
-            // TODO input values
 
             RunNetwork(bot->buy_net);
             if(bot->buy_net->neurons[bot->buy_net->layer_count - 1][0].value > 0.5)
@@ -37,12 +62,16 @@ void BotThink(Bot* bot)
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
         Network* net = bot->sell_net;
-        for(size_t l = 0; l < net->layers[0]; l++)
+        net->neurons[0][0].value = 1;
+        net->neurons[0][1].value = 0;
+        net->neurons[0][2].value = Sigmoid(net->neurons[0][2].k, bot->agent->expected_money);
+        net->neurons[0][3].value = Sigmoid(net->neurons[0][3].k, bot->agent->stocks[i]);
+        net->neurons[0][4].value = Sigmoid(net->neurons[0][4].k, bot->agent->priority);
+        for(size_t l = 0; l < 60; l++)
         {
-            net->neurons[0][l].value = 1;
+            size_t index = (server->cycled_list_index[i] + l) % 60;
+            net->neurons[0][5 + l].value = server->cycled_list[i][index];
         }
-        // TODO input values
-
 
 
         RunNetwork(net);
@@ -56,14 +85,14 @@ void BotThink(Bot* bot)
         
     }
 
-    Network* net = bot->priority_net;
+    // Network* net = bot->priority_net;
 
-    RunNetwork(net);
+    // RunNetwork(net);
 
 
-    if(net->neurons[net->layer_count - 1][0].value > 0.5)
-    {
-        BuyPriority(bot->agent, 
-                    (size_t)(net->neurons[net->layer_count - 1][1].value * bot->agent->money));
-    }
+    // if(net->neurons[net->layer_count - 1][0].value > 0.5)
+    // {
+    //     BuyPriority(bot->agent, 
+    //                 (size_t)(net->neurons[net->layer_count - 1][1].value * bot->agent->money));
+    // }
 }

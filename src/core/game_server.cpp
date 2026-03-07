@@ -150,6 +150,8 @@ size_t ticks = 0;
 // Один игровой тик (каждые 20 секунд)
 static void Tick()
 {
+    server->tick = true;
+
     // Обработка покупки лотов
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
@@ -438,6 +440,8 @@ static void Tick()
     pthread_detach(save_thread);
 
     ticks++;
+
+    server->tick = false;
 }
 
 

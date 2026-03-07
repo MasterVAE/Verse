@@ -50,6 +50,8 @@ struct Server
     size_t cycled_list_index[COMPANIES_COUNT];
 
     Agent* goverment_agent;
+
+    bool tick;
 };
 
 

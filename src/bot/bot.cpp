@@ -34,6 +34,7 @@ static void BotThink(Bot* bot)
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
         {
             Lot* lot = server->old_lots[k][i];
+            size_t id = lot->id;
 
             Network* net = bot->buy_net;
 
@@ -54,7 +55,7 @@ static void BotThink(Bot* bot)
             RunNetwork(bot->buy_net);
             if(bot->buy_net->neurons[bot->buy_net->layer_count - 1][0].value > 0.5)
             {
-                Buy(bot->agent, server->old_lots[k][i]->id);
+                Buy(bot->agent, id);    
             }
         }
     }

@@ -186,7 +186,10 @@ void CreateServer()
 
     serv->goverment_agent = CreateAgent();
     ListAddElem(serv->agents, serv->goverment_agent);
-    
+
+    serv->tick = false;
+
+
     server = serv;
 }
 
@@ -382,6 +385,7 @@ void DestroyLot(void* lot_void)
 bool Buy(Agent* agent, size_t lot_number)
 {
     assert(agent);
+    if(server->tick) return false; // FIXME
 
     Lot* lot = NULL;
     for(size_t j = 0; j < COMPANIES_COUNT; j++)
@@ -422,6 +426,7 @@ bool Buy(Agent* agent, size_t lot_number)
 bool Sell(Agent* agent, size_t amount, size_t price, size_t company)
 {
     assert(agent);
+    if(server->tick) return false; // FIXME
 
     if(company >= COMPANIES_COUNT) return false;
     if(amount == 0) return false;
@@ -457,6 +462,7 @@ bool Sell(Agent* agent, size_t amount, size_t price, size_t company)
 bool Cancel(Agent* agent, size_t lot_id)
 {
     assert(agent);
+    if(server->tick) return false; // FIXME
 
     if(lot_id < COMPANIES_COUNT)
     {

@@ -9,7 +9,7 @@ static void BotThink(Bot* bot);
 
 static Server* server = NULL;
 
-void BotsThink()
+void* BotsThink(void* argv)
 {
     if(!server) server = GetServer();
 
@@ -19,6 +19,8 @@ void BotsThink()
         BotThink((Bot*)elem->value);
         elem = elem->next;
     }
+
+    return NULL;
 }
 
 

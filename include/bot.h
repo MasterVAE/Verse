@@ -3,6 +3,6 @@
 
 #include "data_manager.h"
 
-void BotsThink();
+void* BotsThink(void* argv);
 
 #endif // BOT_H

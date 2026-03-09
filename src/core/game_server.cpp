@@ -15,7 +15,7 @@
 #include "bot.h"
 
 static void SendGameData(ThreadInfo* info, double seconds_till_next_tick);
-static void* Tick(void * args);
+static void Tick();
 
 static const double UPDATES_PER_SECOND = 5; // 5
 static const double TIME_FOR_TICK = 20; // 20
@@ -59,13 +59,7 @@ void* GameServerStartup(void* data)
         if((double)counter >= TIME_FOR_TICK * UPDATES_PER_SECOND)
         {
             counter = 0;
-            pthread_t tick_thread = NULL;
-
-            if (pthread_create(&tick_thread, NULL, Tick, NULL) != 0) 
-            {
-                fprintf(stderr, "Tick fail\n");
-            }
-            pthread_detach(tick_thread);
+            Tick();
         }
         else
         {
@@ -154,7 +148,7 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
 size_t ticks = 0;
 
 // Один игровой тик (каждые 20 секунд)
-static void* Tick(void* args)
+static void Tick()
 {
     // Обработка покупки лотов
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
@@ -425,7 +419,12 @@ static void* Tick(void* args)
 
 
     // Запуск ботов
-    BotsThink();
+    pthread_t bots_thread = NULL;
+    if (pthread_create(&bots_thread, NULL, BotsThink, NULL) != 0) 
+    {
+        fprintf(stderr, "Bots fail\n");
+        }
+    pthread_detach(bots_thread);
     
 
     // Сохранение
@@ -439,7 +438,7 @@ static void* Tick(void* args)
     ticks++;
 
     
-    return NULL;
+    return;
 }
 
 

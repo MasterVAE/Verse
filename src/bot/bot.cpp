@@ -9,7 +9,7 @@ static void BotThink(Bot* bot);
 
 static Server* server = NULL;
 
-void* BotsThink(void* args)
+void BotsThink()
 {
     if(!server) server = GetServer();
 
@@ -19,8 +19,6 @@ void* BotsThink(void* args)
         BotThink((Bot*)elem->value);
         elem = elem->next;
     }
-
-    return NULL;
 }
 
 
@@ -52,8 +50,8 @@ static void BotThink(Bot* bot)
             }
 
 
-            RunNetwork(bot->buy_net);
-            if(bot->buy_net->neurons[bot->buy_net->layer_count - 1][0].value > 0.5)
+            RunNetwork(net);
+            if(net->neurons[net->layer_count - 1][0].value > 0.5)
             {
                 Buy(bot->agent, id);    
             }

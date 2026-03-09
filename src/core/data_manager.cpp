@@ -187,6 +187,8 @@ void CreateServer()
     serv->goverment_agent = CreateAgent();
     ListAddElem(serv->agents, serv->goverment_agent);
 
+    pthread_mutex_init(&serv->mutex, NULL);
+
     server = serv;
 }
 
@@ -383,6 +385,9 @@ bool Buy(Agent* agent, size_t lot_number)
 {
     assert(agent);
 
+
+    pthread_mutex_lock(&server->mutex);
+
     Lot* lot = NULL;
     for(size_t j = 0; j < COMPANIES_COUNT; j++)
     {
@@ -395,16 +400,28 @@ bool Buy(Agent* agent, size_t lot_number)
         }
     }
 
-    if(!lot) return false;
+    if(!lot)
+    {
+        pthread_mutex_unlock(&server->mutex);
+        return false;
+    }
 
     ListElem* elem = lot->agents_want->start;
     while(elem)
     {
-        if(elem->value == agent) return false;
+        if(elem->value == agent)   
+        {
+            pthread_mutex_unlock(&server->mutex);
+            return false;
+        }
         elem = elem->next;
     }
 
-    if(lot->price > agent->expected_money) return false;
+    if(lot->price > agent->expected_money)
+    {
+        pthread_mutex_unlock(&server->mutex);
+        return false;
+    }
 
     agent->expected_money -= lot->price;
 
@@ -412,6 +429,7 @@ bool Buy(Agent* agent, size_t lot_number)
 
     ListAddElem(lot->agents_want, agent);
 
+    pthread_mutex_unlock(&server->mutex);
     return true;
 }
 

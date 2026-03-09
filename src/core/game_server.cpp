@@ -150,6 +150,8 @@ size_t ticks = 0;
 // Один игровой тик (каждые 20 секунд)
 static void Tick()
 {
+    pthread_mutex_lock(&server->mutex);
+
     // Обработка покупки лотов
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
@@ -417,6 +419,7 @@ static void Tick()
         }
     }
 
+    pthread_mutex_unlock(&server->mutex);
 
     // Запуск ботов
     pthread_t bots_thread = NULL;

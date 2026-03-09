@@ -1,6 +1,8 @@
 #ifndef DATA_MANAGER_H
 #define DATA_MANAGER_H
 
+#include <pthread.h>
+
 #include "net_server.h"
 #include "neural_network.h"
 #include "lib.h"
@@ -50,6 +52,8 @@ struct Server
     size_t cycled_list_index[COMPANIES_COUNT];
 
     Agent* goverment_agent;
+
+    pthread_mutex_t mutex;
 };
 
 

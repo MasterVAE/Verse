@@ -24,7 +24,6 @@ static Player* CreatePlayer(const char* nickname, const char* password);
 static Agent* CreateAgent();
 static void DestroyAgent(void* agent);
 
-static Lot* CreateLot(size_t amount, size_t price);
 Bot* CreateBot();
 
 static void SavePlayers();
@@ -337,7 +336,7 @@ static void DestroyAgent(void* agent_void)
 
 
 // Инициализация лота
-static Lot* CreateLot(size_t amount, size_t price)
+Lot* CreateLot(size_t amount, size_t price)
 {
     Lot* lot = (Lot*)calloc(1, sizeof(Lot));
     if(!lot) return NULL;

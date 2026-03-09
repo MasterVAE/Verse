@@ -34,7 +34,11 @@ static void BotThink(Bot* bot)
     {
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
         {
-            Lot* lot = server->old_lots[k][i];
+            Lot* old_lot = server->old_lots[k][i];
+            Lot* lot = CreateLot(old_lot->amount, old_lot->price);
+            lot->id = old_lot->id;
+
+            
             size_t id = lot->id;
 
             Network* net = bot->buy_net;
@@ -58,6 +62,8 @@ static void BotThink(Bot* bot)
             {
                 Buy(bot->agent, id);    
             }
+
+            DestroyLot(lot);
         }
     }
 

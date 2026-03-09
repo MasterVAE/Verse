@@ -114,4 +114,6 @@ void DestroyLot(void* lot_void);
 void DestroyPlayer(void* player_void);
 void DestroyBot(void* player_void);
 
+Lot* CreateLot(size_t amount, size_t price);
+
 #endif // DATA_MANAGER_H

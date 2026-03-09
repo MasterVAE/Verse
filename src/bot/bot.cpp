@@ -29,6 +29,8 @@ static void BotThink(Bot* bot)
 {
     assert(bot);
 
+    pthread_mutex_lock(&server->mutex);
+
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
@@ -86,6 +88,7 @@ static void BotThink(Bot* bot)
         
     }
 
+    pthread_mutex_unlock(&server->mutex);
     // Network* net = bot->priority_net;
 
     // RunNetwork(net);

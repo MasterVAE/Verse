@@ -326,6 +326,13 @@ static void DestroyAgent(void* agent_void)
     {
         server->goverment_agent->stocks[i] += agent->stocks[i];
     }
+
+    ListElem* elem = agent->selling_lots->start;
+    while(elem)
+    {
+        ((Lot*)elem->value)->owner = NULL;
+        elem = elem->next;
+    }
     
     free(agent->want_buy_lots);
     free(agent);

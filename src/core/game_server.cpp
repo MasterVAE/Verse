@@ -228,7 +228,11 @@ static void Tick()
             }
             else if(i >= 8)
             {
-                ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
+                if(lot->owner)
+                {
+                    ListDeleteElem(lot->owner->selling_lots, lot, NULL);
+                }
+                DestroyLot(lot);
             }
         }
         if(server->old_lots_count[k] > 8) server->old_lots_count[k] = 8;

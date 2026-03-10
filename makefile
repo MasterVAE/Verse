@@ -78,7 +78,7 @@ CFLAGS = -std=c++17 -Wall \
 RELEASE_FLAGS = -O2 -march=native -g -D NDEBUG -flto
 
 ifeq ($(TARGET), DEBUG)
-    CFLAGS += $(DEBUG_FLAGS)
+    CFLAGS += $(RELEASE_FLAGS)
 else
     CFLAGS += $(RELEASE_FLAGS)
 endif

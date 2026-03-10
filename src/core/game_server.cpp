@@ -199,10 +199,13 @@ static void Tick()
                     elem = elem->next;
                 }
 
-                buyer->money -= lot->price;
-                buyer->stocks[lot->company] += lot->amount;
-                lot->owner->money += lot->price;
-                lot->owner->stocks[lot->company] -= lot->amount;
+                if(lot->owner)
+                {
+                    buyer->money -= lot->price;
+                    buyer->stocks[lot->company] += lot->amount;
+                    lot->owner->money += lot->price;
+                    lot->owner->stocks[lot->company] -= lot->amount;
+                }
 
                 ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
 
@@ -403,7 +406,7 @@ static void Tick()
         while(elem)
         {
             Bot* bot = (Bot*)elem->value;
-            if(bot->agent->money > 10000 && server->bots->count < 200) // FIXME const
+            if(bot->agent->money > 15000 && server->bots->count < 200) // FIXME const
             {
                 Bot* new_bot = CreateBot();
                 DestroyNetwork(new_bot->buy_net);

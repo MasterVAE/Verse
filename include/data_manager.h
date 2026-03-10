@@ -81,6 +81,8 @@ struct Bot
     Network* priority_net;
     
     Agent* agent;
+
+    bool destroyed;
 };
 
 // Структура агента на бирже

@@ -862,6 +862,7 @@ Bot* CreateBot()
     new_bot->sell_net = CreateSellNetwork();
     new_bot->priority_net = CreatePriorityNetwork();
 
+    new_bot->destroyed = false;
 
     ListAddElem(server->agents, new_bot->agent);
 
@@ -874,8 +875,11 @@ Bot* CreateBot()
 void DestroyBot(void* bot_void)
 {
     assert(bot_void);
+    
 
     Bot* bot = (Bot*)bot_void;
+
+    bot->destroyed = true;
     ListDeleteElem(server->agents, bot->agent, DestroyAgent);
     free(bot);
 }

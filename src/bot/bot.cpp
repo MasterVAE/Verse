@@ -72,6 +72,7 @@ static void BotThink(Bot* bot)
 
 
             RunNetwork(net);
+            if(bot->destroye) return;
             if(net->neurons[net->layer_count - 1][0].value > 0.5)
             {
                 Buy(bot->agent, id);    

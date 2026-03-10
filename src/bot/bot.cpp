@@ -16,7 +16,10 @@ void* BotsThink(void* argv)
     ListElem* elem = server->bots->start;
     while(elem)
     {
-        BotThink((Bot*)elem->value);
+        if(elem->value)
+        {
+            BotThink((Bot*)elem->value);
+        }
         elem = elem->next;
     }
 

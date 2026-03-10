@@ -49,7 +49,7 @@ static void BotThink(Bot* bot)
 
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
-        for(size_t i = 0; i < server->old_lots_count[k]; i++)
+        for(size_t i = 0; i < lots_count[k]; i++)
         {   
             Lot* lot = &lots[k][i];
 

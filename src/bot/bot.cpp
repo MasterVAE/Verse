@@ -32,9 +32,11 @@ static void BotThink(Bot* bot)
     // Buying
     pthread_mutex_lock(&server->mutex);
     Lot* lots[COMPANIES_COUNT] = {0};
+    size_t lots_count[COMPANIES_COUNT] = {0};
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
         lots[k] = (Lot*)calloc(server->old_lots_count[k], sizeof(Lot));
+        lots_count[k] = server->old_lots_count[k];
 
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
         {

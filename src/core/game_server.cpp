@@ -67,7 +67,8 @@ void* GameServerStartup(void* data)
             {
                 ThreadInfo* info = THREAD_INFO + i;
                 if(!info->in_use) continue;
-
+                
+                printf("[GAME SERVER] Sent data %lu\n", counter);
                 SendGameData(info, TIME_FOR_TICK - (double)counter/UPDATES_PER_SECOND);
             }
         }

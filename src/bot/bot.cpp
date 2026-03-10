@@ -29,17 +29,29 @@ static void BotThink(Bot* bot)
 {
     assert(bot);
 
+    // Buying
+    pthread_mutex_lock(&server->mutex);
+    Lot* lots[COMPANIES_COUNT] = {0};
+    for(size_t k = 0; k < COMPANIES_COUNT; k++)
+    {
+        lots[k] = (Lot*)calloc(server->old_lots_count[k], sizeof(Lot));
+
+        for(size_t i = 0; i < server->old_lots_count[k]; i++)
+        {
+            lots[k][i].amount = server->old_lots[k][i]->amount;
+            lots[k][i].price = server->old_lots[k][i]->price;
+            lots[k][i].id = server->old_lots[k][i]->id;
+        }
+    }
+    pthread_mutex_unlock(&server->mutex);
 
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
         for(size_t i = 0; i < server->old_lots_count[k]; i++)
-        {
-            Lot* old_lot = server->old_lots[k][i];
-            Lot* lot = CreateLot(old_lot->amount, old_lot->price);
-            lot->id = old_lot->id;
+        {   
+            Lot* lot = &lots[k][i];
 
-            
-            size_t id = lot->id;
+            size_t id = lots[k][i].id;
 
             Network* net = bot->buy_net;
 
@@ -63,10 +75,15 @@ static void BotThink(Bot* bot)
                 Buy(bot->agent, id);    
             }
 
-            DestroyLot(lot);
         }
     }
 
+    for(size_t k = 0; k < COMPANIES_COUNT; k++)
+    {
+        free(lots[k]);
+    }
+
+    // Selling
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
         Network* net = bot->sell_net;

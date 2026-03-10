@@ -68,7 +68,6 @@ void* GameServerStartup(void* data)
                 ThreadInfo* info = THREAD_INFO + i;
                 if(!info->in_use) continue;
                 
-                printf("[GAME SERVER] Sent data %lu\n", counter);
                 SendGameData(info, TIME_FOR_TICK - (double)counter/UPDATES_PER_SECOND);
             }
         }
@@ -404,7 +403,7 @@ static void Tick()
         while(elem)
         {
             Bot* bot = (Bot*)elem->value;
-            if(bot->agent->money > 10000)
+            if(bot->agent->money > 10000 && server->bots->count < 200) // FIXME const
             {
                 Bot* new_bot = CreateBot();
                 DestroyNetwork(new_bot->buy_net);

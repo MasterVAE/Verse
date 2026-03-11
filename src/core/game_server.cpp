@@ -406,7 +406,7 @@ static void Tick()
         while(elem)
         {
             Bot* bot = (Bot*)elem->value;
-            if(bot->agent->money > 15000 && server->bots->count < 200) // FIXME const
+            if(bot->agent->money > 15000 && server->bots->count < 100) // FIXME const
             {
                 Bot* new_bot = CreateBot();
                 DestroyNetwork(new_bot->buy_net);
@@ -426,7 +426,7 @@ static void Tick()
         }
     }
 
-    // pthread_mutex_unlock(&server->mutex);
+    pthread_mutex_unlock(&server->mutex);
 
     // // Запуск ботов
     // pthread_t bots_thread = NULL;

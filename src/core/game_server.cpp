@@ -205,10 +205,10 @@ static void Tick()
                     buyer->stocks[lot->company] += lot->amount;
                     lot->owner->money += lot->price;
                     lot->owner->stocks[lot->company] -= lot->amount;
+
+                    ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
                 }
-
-                ListDeleteElem(lot->owner->selling_lots, lot, DestroyLot);
-
+        
                 for(size_t j = i + 1; j < server->old_lots_count[k]; j++)
                 {
                     server->old_lots[k][j - 1] = server->old_lots[k][j];

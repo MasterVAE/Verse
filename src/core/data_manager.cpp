@@ -392,7 +392,6 @@ bool Buy(Agent* agent, size_t lot_number)
     assert(agent);
 
 
-    pthread_mutex_lock(&server->mutex);
 
     Lot* lot = NULL;
     for(size_t j = 0; j < COMPANIES_COUNT; j++)
@@ -408,7 +407,6 @@ bool Buy(Agent* agent, size_t lot_number)
 
     if(!lot)
     {
-        pthread_mutex_unlock(&server->mutex);
         return false;
     }
 
@@ -417,7 +415,6 @@ bool Buy(Agent* agent, size_t lot_number)
     {
         if(elem->value == agent)   
         {
-            pthread_mutex_unlock(&server->mutex);
             return false;
         }
         elem = elem->next;
@@ -425,7 +422,6 @@ bool Buy(Agent* agent, size_t lot_number)
 
     if(lot->price > agent->expected_money)
     {
-        pthread_mutex_unlock(&server->mutex);
         return false;
     }
 
@@ -435,7 +431,6 @@ bool Buy(Agent* agent, size_t lot_number)
 
     ListAddElem(lot->agents_want, agent);
 
-    pthread_mutex_unlock(&server->mutex);
     return true;
 }
 

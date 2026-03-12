@@ -63,6 +63,7 @@ void* GameServerStartup(void* data)
         }
         else
         {
+
             for(size_t i = 0; i < MAX_CLIENTS; i++)
             {
                 ThreadInfo* info = THREAD_INFO + i;
@@ -142,6 +143,7 @@ static void SendGameData(ThreadInfo* info, double seconds_till_next_tick)
     sprintf(buffer + shift, "\n");
 
     send(info->data->client_socket, buffer, strlen(buffer), 0); 
+
 }
 
 

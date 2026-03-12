@@ -428,15 +428,15 @@ static void Tick()
 
     pthread_mutex_unlock(&server->mutex);
 
-    // // Запуск ботов
-    // pthread_t bots_thread = NULL;
-    // if (pthread_create(&bots_thread, NULL, BotsThink, NULL) != 0) 
-    // {
-    //     fprintf(stderr, "Bots fail\n");
-    // }
-    // pthread_detach(bots_thread);
+    // Запуск ботов
+    pthread_t bots_thread = NULL;
+    if (pthread_create(&bots_thread, NULL, BotsThink, NULL) != 0) 
+    {
+        fprintf(stderr, "Bots fail\n");
+    }
+    pthread_detach(bots_thread);
 
-    BotsThink(NULL);
+    //BotsThink(NULL);
     
 
     // Сохранение

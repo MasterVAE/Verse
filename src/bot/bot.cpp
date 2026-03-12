@@ -32,6 +32,7 @@ static void BotThink(Bot* bot)
 {
     assert(bot);
 
+
     // Buying
     pthread_mutex_lock(&server->mutex);
     Lot* lots[COMPANIES_COUNT] = {0};
@@ -48,7 +49,6 @@ static void BotThink(Bot* bot)
             lots[k][i].id = server->old_lots[k][i]->id;
         }
     }
-    pthread_mutex_unlock(&server->mutex);
 
     for(size_t k = 0; k < COMPANIES_COUNT; k++)
     {
@@ -115,6 +115,8 @@ static void BotThink(Bot* bot)
         }
         
     }
+
+    pthread_mutex_unlock(&server->mutex);
 
     // Network* net = bot->priority_net;
 

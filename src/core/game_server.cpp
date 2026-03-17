@@ -387,44 +387,49 @@ static void Tick()
 
 
 
-    // Удаление мертвых ботов
+    // Обновление ботов
     {
-        ListElem* elem = server->bots->start;
-        while(elem)
+        int dead_bot_index = -1;
+        for(size_t i = 0; i < BOTS_COUNT; i++)
         {
-            ListElem* next = elem->next;
-            Bot* bot = (Bot*)elem->value;
-            if(bot->agent->money < 100)
+            if(server->bots[i]->agent->money < 100)
             {
-                ListDeleteElem(server->bots, bot, DestroyBot);
+                dead_bot_index = i;
+                break;
             }
-            elem = next;
         }
-    }
 
-    // Клонирование успешных ботов
-    {
-        ListElem* elem = server->bots->start;
-        while(elem)
+        if(dead_bot_index != -1)
         {
-            Bot* bot = (Bot*)elem->value;
-            if(bot->agent->money > 15000 && server->bots->count < 100) // FIXME const
+            Bot* successful_bot = server->bots[0];
+            int success = server->bots[0]->agent->money;
+
+            for(size_t i = 0; i < BOTS_COUNT; i++)
             {
-                Bot* new_bot = CreateBot();
-                DestroyNetwork(new_bot->buy_net);
-                new_bot->buy_net = CopyNetwork(bot->buy_net);
-                EvolveNetwork(new_bot->buy_net);
-                DestroyNetwork(new_bot->sell_net);
-                new_bot->sell_net = CopyNetwork(bot->sell_net);
-                EvolveNetwork(new_bot->sell_net);
-                DestroyNetwork(new_bot->priority_net);
-                new_bot->priority_net = CopyNetwork(bot->priority_net);
-                EvolveNetwork(new_bot->priority_net);
-
-
-                ListAddElem(server->bots, new_bot);
+                Bot* bot = server->bots[i];
+                if(bot->agent->money > success)
+                {
+                    successful_bot = bot;
+                    success = bot->agent->money;
+                }
             }
-            elem = elem->next;
+
+
+            DestroyBot(server->bots[dead_bot_index]);
+
+
+            Bot* new_bot = CreateBot();
+            DestroyNetwork(new_bot->buy_net);
+            new_bot->buy_net = CopyNetwork(successful_bot->buy_net);
+            EvolveNetwork(new_bot->buy_net);
+            DestroyNetwork(new_bot->sell_net);
+            new_bot->sell_net = CopyNetwork(successful_bot->sell_net);
+            EvolveNetwork(new_bot->sell_net);
+            DestroyNetwork(new_bot->priority_net);
+            new_bot->priority_net = CopyNetwork(successful_bot->priority_net);
+            EvolveNetwork(new_bot->priority_net);
+
+            server->bots[dead_bot_index] = new_bot;
         }
     }
 

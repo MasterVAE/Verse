@@ -30,7 +30,7 @@ void* Save(void* arg);
 void Load();
 
 const size_t PRICE_ARRAY_COUNT = 60;
-static const size_t START_BOTS_COUNT = 100;
+static const size_t BOTS_COUNT = 50;
 const size_t COMPANIES_COUNT = 5;
 
 struct Lot;
@@ -39,7 +39,7 @@ struct Lot;
 struct Server
 {
     List* players;
-    List* bots;
+    Bot* bots[BOTS_COUNT];
 
     List* agents;
 

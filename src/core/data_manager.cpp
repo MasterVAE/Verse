@@ -160,7 +160,6 @@ void CreateServer()
     if(!serv) CoreShutdown();
 
     serv->players = ListCreate();
-    serv->bots = ListCreate();
     serv->agents = ListCreate();
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {
@@ -586,13 +585,11 @@ static void SaveBots()
     FILE* file = fopen(BOTS_FILENAME, "w+");
     if(!file) return;
 
-    fprintf(file, "%lu ", server->bots->count);
 
-    ListElem* elem = server->bots->start;
-    while(elem)
+    for(size_t b = 0; b < BOTS_COUNT; b++)
     {
-        Bot* bot = (Bot*)elem->value;
-        // Save money & stocks
+        Bot* bot = server->bots[b];
+
         fprintf(file, "%lu ", bot->agent->money);
         for(size_t i = 0; i < COMPANIES_COUNT; i++)
         {
@@ -665,9 +662,8 @@ static void SaveBots()
         }
         
         fprintf(file, "\n");
-        elem = elem->next;
     }
-
+    
     fclose(file);
 }
 
@@ -723,21 +719,19 @@ static void LoadBots()
     FILE* file = fopen(BOTS_FILENAME, "r+");
     if(!file)
     {
-        for(size_t i = 0; i < START_BOTS_COUNT; i++)
+        for(size_t i = 0; i < BOTS_COUNT; i++)
         {
             Bot* bot = CreateBot();
             RandomNetwork(bot->buy_net);
             RandomNetwork(bot->sell_net);
             RandomNetwork(bot->priority_net);
 
-            ListAddElem(server->bots, bot);
+            server->bots[i] = bot;
         }
         return;
     }
-    size_t bot_count = 0;
-    fscanf(file, "%lu ", &bot_count);
 
-    for(size_t l = 0; l < bot_count; l++)
+    for(size_t l = 0; l < BOTS_COUNT; l++)
     {
         Bot* bot = CreateBot();
         fscanf(file, "%lu ", &bot->agent->money);
@@ -810,9 +804,7 @@ static void LoadBots()
             }
         }
 
-        ListAddElem(server->bots, bot);
-
-
+        server->bots[l] = bot;
     }
 
     fclose(file);
@@ -836,7 +828,7 @@ static void LoadWorld()
 
     for(size_t i = 0; i < COMPANIES_COUNT; i++)
     {   
-        server->goverment_agent->stocks[i] = 10000;
+        server->goverment_agent->stocks[i] = 500;
     }
 }
 

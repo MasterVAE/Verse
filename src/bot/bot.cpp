@@ -13,14 +13,9 @@ void* BotsThink(void* argv)
 {
     if(!server) server = GetServer();
 
-    ListElem* elem = server->bots->start;
-    while(elem)
+    for(size_t i = 0; i < BOTS_COUNT; i++)
     {
-        if(elem->value)
-        {
-            BotThink((Bot*)elem->value);
-        }
-        elem = elem->next;
+        BotThink(server->bots[i]);
     }
 
     return NULL;

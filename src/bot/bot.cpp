@@ -57,15 +57,16 @@ static void BotThink(Bot* bot)
 
             net->neurons[0][0].value = 1;
             net->neurons[0][1].value = 0;
-            net->neurons[0][2].value = Sigmoid(net->neurons[0][2].k, bot->agent->expected_money);
-            net->neurons[0][3].value = Sigmoid(net->neurons[0][3].k, bot->agent->stocks[k]);
-            net->neurons[0][4].value = Sigmoid(net->neurons[0][4].k, bot->agent->priority);
-            net->neurons[0][5].value = Sigmoid(net->neurons[0][5].k, ((double)lot->price)/lot->amount);
+            net->neurons[0][2].value = ((double)(rand()%10000))/10000;
+            net->neurons[0][3].value = Sigmoid(net->neurons[0][2].k, bot->agent->expected_money);
+            net->neurons[0][4].value = Sigmoid(net->neurons[0][3].k, bot->agent->stocks[k]);
+            net->neurons[0][5].value = Sigmoid(net->neurons[0][4].k, bot->agent->priority);
+            net->neurons[0][6].value = Sigmoid(net->neurons[0][5].k, ((double)lot->price)/lot->amount);
             for(size_t l = 0; l < 60; l++)
             {
                 size_t index = (server->cycled_list_index[k] + l) % 60;
 
-                net->neurons[0][6 + l].value = server->cycled_list[k][index];
+                net->neurons[0][7 + l].value = server->cycled_list[k][index];
             }
 
 
@@ -90,13 +91,14 @@ static void BotThink(Bot* bot)
         Network* net = bot->sell_net;
         net->neurons[0][0].value = 1;
         net->neurons[0][1].value = 0;
-        net->neurons[0][2].value = Sigmoid(net->neurons[0][2].k, bot->agent->expected_money);
-        net->neurons[0][3].value = Sigmoid(net->neurons[0][3].k, bot->agent->stocks[i]);
-        net->neurons[0][4].value = Sigmoid(net->neurons[0][4].k, bot->agent->priority);
+        net->neurons[0][2].value = ((double)(rand()%10000))/10000;
+        net->neurons[0][3].value = Sigmoid(net->neurons[0][2].k, bot->agent->expected_money);
+        net->neurons[0][4].value = Sigmoid(net->neurons[0][3].k, bot->agent->stocks[i]);
+        net->neurons[0][5].value = Sigmoid(net->neurons[0][4].k, bot->agent->priority);
         for(size_t l = 0; l < 60; l++)
         {
             size_t index = (server->cycled_list_index[i] + l) % 60;
-            net->neurons[0][5 + l].value = server->cycled_list[i][index];
+            net->neurons[0][6 + l].value = server->cycled_list[i][index];
         }
 
 

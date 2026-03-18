@@ -390,8 +390,6 @@ bool Buy(Agent* agent, size_t lot_number)
 {
     assert(agent);
 
-
-
     Lot* lot = NULL;
     for(size_t j = 0; j < COMPANIES_COUNT; j++)
     {

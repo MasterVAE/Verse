@@ -49,24 +49,24 @@ void DestroyNetwork(Network* net)
 
 Network* CreateBuyNetwork()
 {
-    size_t layer_count = 8;
-    size_t layers[8] = {67, 80, 100, 120, 120, 100, 60, 1};
+    size_t layer_count = 7;
+    size_t layers[8] = {68, 80, 100, 120, 100, 60, 1};
 
     return CreateNetwork(layer_count, layers);
 }
 
 Network* CreateSellNetwork()
 {
-    size_t layer_count = 8;
-    size_t layers[8] = {66, 80, 100, 120, 120, 100, 60, 3};
+    size_t layer_count = 7;
+    size_t layers[8] = {67, 80, 100, 120, 100, 60, 3};
 
     return CreateNetwork(layer_count, layers);
 }
 
 Network* CreatePriorityNetwork()
 {
-    size_t layer_count = 8;
-    size_t layers[8] = {60, 80, 100, 120, 120, 100, 60, 2};
+    size_t layer_count = 7;
+    size_t layers[8] = {60, 80, 100, 120, 100, 60, 2};
 
     return CreateNetwork(layer_count, layers);
 }

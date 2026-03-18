@@ -23,9 +23,6 @@ static bool WORKING = true;
 static ThreadInfo THREAD_INFO[MAX_CLIENTS];
 
 
-
-
-
 // Контроль TCP туннеля с пользователем
 static void* HandleClient(void* arg) 
 {

@@ -30,7 +30,7 @@ void* Save(void* arg);
 void Load();
 
 const size_t PRICE_ARRAY_COUNT = 60;
-static const size_t BOTS_COUNT = 50;
+static const size_t BOTS_COUNT = 0;
 const size_t COMPANIES_COUNT = 5;
 
 struct Lot;
